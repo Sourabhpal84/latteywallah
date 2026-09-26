@@ -1,0 +1,17 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum OrderStatus { PENDING CONFIRMED PROCESSING PACKED SHIPPED OUT_FOR_DELIVERY DELIVERED CANCELLED RETURNED REFUNDED }
+enum PaymentStatus { PENDING PROCESSING PAID FAILED REFUNDED PARTIALLY_REFUNDED }
+enum QueryStatus { NEW IN_PROGRESS RESOLVED }
+
+model Admin { id String @id @default(cuid()); email String @unique; passwordHash String; role String @default("admin"); createdAt DateTime @default(now()) }
+model Category { id String @id @default(cuid()); name String; slug String @unique; description String?; imageUrl String?; position Int @default(0); enabled Boolean @default(true); products Product[]; createdAt DateTime @default(now()) }
+model Product { id String @id @default(cuid()); name String; slug String @unique; description String?; material String?; care String?; price Int; mrp Int; featured Boolean @default(false); bestSeller Boolean @default(false); newArrival Boolean @default(false); published Boolean @default(false); categoryId String; category Category @relation(fields: [categoryId], references: [id]); images ProductImage[]; variants ProductVariant[]; orderItems OrderItem[]; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; @@index([categoryId, published]) }
+model ProductImage { id String @id @default(cuid()); url String; alt String?; position Int @default(0); productId String; product Product @relation(fields: [productId], references: [id], onDelete: Cascade) }
+model ProductVariant { id String @id @default(cuid()); sku String @unique; size String; color String; price Int?; stock Int @default(0); reserved Int @default(0); imageUrl String?; productId String; product Product @relation(fields: [productId], references: [id], onDelete: Cascade); orderItems OrderItem[]; @@index([productId, size, color]) }
+model Order { id String @id @default(cuid()); orderNumber String @unique; customerName String; phone String; email String; address Json; subtotal Int; discount Int @default(0); delivery Int; total Int; status OrderStatus @default(PENDING); paymentStatus PaymentStatus @default(PENDING); paymentId String?; razorpayOrderId String?; items OrderItem[]; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; @@index([status, paymentStatus, createdAt]) }
+model OrderItem { id String @id @default(cuid()); name String; sku String; quantity Int; price Int; orderId String; order Order @relation(fields: [orderId], references: [id], onDelete: Cascade); variantId String?; variant ProductVariant? }
+model CustomerQuery { id String @id @default(cuid()); name String; phone String; email String; subject String; message String; status QueryStatus @default(NEW); createdAt DateTime @default(now()) }
+model Coupon { id String @id @default(cuid()); code String @unique; type String; value Int; minOrder Int @default(0); maxDiscount Int?; startsAt DateTime; expiresAt DateTime; usageLimit Int?; active Boolean @default(true) }
+model HomepageSection { id String @id @default(cuid()); key String @unique; heading String?; subtitle String?; imageUrl String?; ctaText String?; visible Boolean @default(true); content Json? }
