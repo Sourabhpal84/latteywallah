@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, ChevronDown, Heart, Menu, Search, ShoppingBag, Sparkles, X } from 'lucide-react'
 import { categories, products, Product } from '@/lib/products'
 import { loadCategoriesFromFirestore, loadProductsFromFirestore } from '@/lib/firestore-catalog'
+import { CategoryNode, descendantsOf, slugify } from '@/lib/category-tree'
+import { loadCategoryNodesFromFirestore } from '@/lib/firestore-catalog'
 
 const money = (n: number) => `₹${n.toLocaleString('en-IN')}`
 
@@ -11,6 +13,7 @@ export default function Home() {
   const [cart, setCart] = useState<Product[]>([])
   const [catalog, setCatalog] = useState<Product[]>(products)
   const [categoryCatalog, setCategoryCatalog] = useState(categories)
+  const [categoryNodes, setCategoryNodes] = useState<CategoryNode[]>([])
   const [wishlist, setWishlist] = useState<string[]>([])
   const [query, setQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
@@ -25,6 +28,8 @@ export default function Home() {
       const loadedCategories = await loadCategoriesFromFirestore(savedCategories ? JSON.parse(savedCategories) : categories.map(([name]) => name))
       setCatalog(loadedProducts)
       setCategoryCatalog(loadedCategories.map(name => [name.toUpperCase(), 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=85']))
+      const fallbackNodes = loadedCategories.map((name, index) => ({ id: slugify(name), name, slug: slugify(name), parentId: null, active: true, sortOrder: index }))
+      setCategoryNodes(await loadCategoryNodesFromFirestore(fallbackNodes))
     }
     loadCatalog().catch(() => undefined)
     const refresh = () => { loadCatalog().catch(() => undefined) }
@@ -32,7 +37,7 @@ export default function Home() {
     return () => window.removeEventListener('lattey-catalog-updated', refresh)
   }, [])
 
-  const shown = useMemo(() => catalog.filter(p => (activeCategory === 'All' || p.category === activeCategory) && p.name.toLowerCase().includes(query.toLowerCase())), [activeCategory, query, catalog])
+  const shown = useMemo(() => { const selected = categoryNodes.find(category => category.id === activeCategory); const visibleIds = selected ? descendantsOf(categoryNodes, selected.id) : null; const term = query.trim().toLowerCase(); return catalog.filter(product => { const categoryMatch = !selected || visibleIds?.has(product.categoryId || slugify(product.category)); const searchable = [product.name, product.description, product.category, product.color, product.material, ...(product.tags || []), ...(product.searchKeywords || []), ...(product.variants || []).map(variant => `${variant.sku} ${variant.color} ${variant.size}`)].filter(Boolean).join(' ').toLowerCase().replace(/-/g, ' '); const isAvailable = product.active !== false && product.published !== false; return isAvailable && categoryMatch && (!term || searchable.includes(term)) }) }, [activeCategory, query, catalog, categoryNodes])
   const toggleWishlist = (id: string) => setWishlist(v => v.includes(id) ? v.filter(x => x !== id) : [...v, id])
   const addCart = (product: Product) => { const next = [...cart, product]; setCart(next); localStorage.setItem('lattey-wallah-cart', JSON.stringify(next)); setCartOpen(true) }
 
@@ -49,9 +54,9 @@ export default function Home() {
 
     <section className="intro"><p className="eyebrow">WHY LATTEY WALLAH</p><h2>Less, but better.</h2><p>Wardrobe staples, considered down to the last stitch. Clean silhouettes, honest fabrics, and a point of view that’s all your own.</p></section>
 
-    <section className="category-wrap" id="collections"><div className="section-head"><div><p className="eyebrow">SHOP BY CATEGORY</p><h2>Find your uniform.</h2></div><a href="#shop" className="text-link">VIEW ALL <ArrowRight size={15} /></a></div><div className="category-grid">{categoryCatalog.map(([name, image]) => <a className="category-card" href="#shop" key={name} onClick={() => { const match = catalog.find(product => product.category.toLowerCase() === name.toLowerCase()); setActiveCategory(match?.category || name.replace('T-SHIRTS', 'T-Shirts').toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase())) }}><img src={image} alt={name} /><div><span>{name}</span><ArrowRight size={17} /></div></a>)}</div></section>
+    <section className="category-wrap" id="collections"><div className="section-head"><div><p className="eyebrow">SHOP BY CATEGORY</p><h2>Find your uniform.</h2></div><a href="#shop" className="text-link">VIEW ALL <ArrowRight size={15} /></a></div><div className="category-grid">{categoryNodes.filter(category => !category.parentId).map(category => <a className="category-card" href="#shop" key={category.id} onClick={() => setActiveCategory(category.id)}><img src={category.image || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=85'} alt={category.name} /><div><span>{category.name.toUpperCase()}</span><ArrowRight size={17} /></div></a>)}</div></section>
 
-    <section className="shop" id="shop"><div className="section-head"><div><p className="eyebrow">THE LATEST DROP</p><h2>Made for now.</h2></div><div className="shop-tools"><div className="search"><Search size={16} /><input id="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search pieces" /></div><button className="filter">FILTER <ChevronDown size={15} /></button></div></div><div className="chips"><button className={activeCategory === 'All' ? 'active' : ''} onClick={() => setActiveCategory('All')}>ALL</button>{['T-Shirts', 'Shirts', 'Trousers', 'Jackets'].map(c => <button className={activeCategory === c ? 'active' : ''} key={c} onClick={() => setActiveCategory(c)}>{c.toUpperCase()}</button>)}</div><div className="product-grid">{shown.map(p => <ProductCard key={p.id} product={p} liked={wishlist.includes(p.id)} onLike={() => toggleWishlist(p.id)} onAdd={() => addCart(p)} />)}</div></section>
+    <section className="shop" id="shop"><div className="section-head"><div><p className="eyebrow">{query ? `SEARCH RESULTS FOR “${query}”` : 'THE LATEST DROP'}</p><h2>{query ? `${shown.length} products found` : 'Made for now.'}</h2></div><div className="shop-tools"><div className="search"><Search size={16} /><input id="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search products, colours, tags" /></div><button className="filter">FILTER <ChevronDown size={15} /></button></div></div><div className="chips"><button className={activeCategory === 'All' ? 'active' : ''} onClick={() => setActiveCategory('All')}>ALL</button>{categoryNodes.filter(category => !category.parentId).map(category => <button className={activeCategory === category.id ? 'active' : ''} key={category.id} onClick={() => setActiveCategory(category.id)}>{category.name.toUpperCase()}</button>)}</div>{shown.length ? <div className="product-grid">{shown.map(p => <ProductCard key={p.id} product={p} liked={wishlist.includes(p.id)} onLike={() => toggleWishlist(p.id)} onAdd={() => addCart(p)} />)}</div> : <div className="empty-search"><h3>No products found</h3><p>Try searching for another product, category or keyword.</p></div>}</section>
 
     <section className="manifesto"><div><p className="eyebrow">OUR PHILOSOPHY</p><h2>Clothes that<br /><i>stay with you.</i></h2></div><p>Good design doesn’t demand attention. It earns a place in your everyday — quietly, confidently, completely.</p><a className="button button-dark" href="#about">OUR STORY <ArrowRight size={16} /></a></section>
 

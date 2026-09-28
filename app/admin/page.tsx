@@ -11,7 +11,7 @@ import { auth } from '@/lib/firebase'
 const productKey = 'lattey-wallah-products'
 const categoryKey = 'lattey-wallah-categories'
 const defaultCategories = ['T-Shirts', 'Shirts', 'Trousers', 'Jackets', 'Hoodies', 'Jeans']
-const blankProduct = { name: '', category: 'T-Shirts', description: '', mrp: '999', price: '699', color: 'Black', sizes: 'S, M, L, XL', images: ['', '', '', ''], material: 'Cotton' }
+const blankProduct = { name: '', category: 'T-Shirts', description: '', mrp: '999', price: '699', color: 'Black', sizes: 'S, M, L, XL', images: ['', '', '', ''], material: 'Cotton', tags: '' }
 
 export default function AdminPage() {
   const [authReady, setAuthReady] = useState(false)

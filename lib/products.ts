@@ -1,5 +1,5 @@
 export type ProductVariant = { id: string; color: string; size: string; price: number; stock: number; sku: string; image?: string }
-export type Product = { id: string; name: string; category: string; description?: string; price: number; mrp: number; image: string; images?: string[]; tag?: string; sizes: string[]; colors?: string[]; color: string; variants?: ProductVariant[]; material?: string }
+export type Product = { id: string; name: string; category: string; categoryId?: string; subcategoryId?: string; description?: string; price: number; mrp: number; image: string; images?: string[]; tag?: string; tags?: string[]; searchKeywords?: string[]; sizes: string[]; colors?: string[]; color: string; variants?: ProductVariant[]; material?: string; active?: boolean; published?: boolean }
 
 const imageSet = (images: string[]) => images.map(image => `${image}?auto=format&fit=crop&w=1200&q=85`)
 const createVariants = (name: string, colors: string[], sizes: string[], price: number, stock = 8) => colors.flatMap(color => sizes.map(size => ({ id: `${name}-${color}-${size}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'), color, size, price, stock, sku: `${name.slice(0, 3).toUpperCase()}-${color.slice(0, 2).toUpperCase()}-${size}` })))
