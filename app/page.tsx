@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, ChevronDown, Heart, Menu, Search, ShoppingBag, Sparkles, X } from 'lucide-react'
 import { categories, products, Product } from '@/lib/products'
 
@@ -8,15 +8,29 @@ const money = (n: number) => `₹${n.toLocaleString('en-IN')}`
 
 export default function Home() {
   const [cart, setCart] = useState<Product[]>([])
+  const [catalog, setCatalog] = useState<Product[]>(products)
+  const [categoryCatalog, setCategoryCatalog] = useState(categories)
   const [wishlist, setWishlist] = useState<string[]>([])
   const [query, setQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [cartOpen, setCartOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const shown = useMemo(() => products.filter(p => (activeCategory === 'All' || p.category === activeCategory) && p.name.toLowerCase().includes(query.toLowerCase())), [activeCategory, query])
+  useEffect(() => {
+    const loadCatalog = () => {
+      const savedProducts = localStorage.getItem('lattey-wallah-products')
+      const savedCategories = localStorage.getItem('lattey-wallah-categories')
+      if (savedProducts) setCatalog(JSON.parse(savedProducts))
+      if (savedCategories) setCategoryCatalog(JSON.parse(savedCategories).map((name: string) => [name.toUpperCase(), 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=85']))
+    }
+    loadCatalog()
+    window.addEventListener('lattey-catalog-updated', loadCatalog)
+    return () => window.removeEventListener('lattey-catalog-updated', loadCatalog)
+  }, [])
+
+  const shown = useMemo(() => catalog.filter(p => (activeCategory === 'All' || p.category === activeCategory) && p.name.toLowerCase().includes(query.toLowerCase())), [activeCategory, query, catalog])
   const toggleWishlist = (id: string) => setWishlist(v => v.includes(id) ? v.filter(x => x !== id) : [...v, id])
-  const addCart = (product: Product) => { setCart(v => [...v, product]); setCartOpen(true) }
+  const addCart = (product: Product) => { const next = [...cart, product]; setCart(next); localStorage.setItem('lattey-wallah-cart', JSON.stringify(next)); setCartOpen(true) }
 
   return <main>
     <div className="announcement">FREE SHIPPING ON ORDERS ABOVE ₹1,999 <span>·</span> EASY 7-DAY RETURNS</div>
@@ -31,7 +45,7 @@ export default function Home() {
 
     <section className="intro"><p className="eyebrow">WHY LATTEY WALLAH</p><h2>Less, but better.</h2><p>Wardrobe staples, considered down to the last stitch. Clean silhouettes, honest fabrics, and a point of view that’s all your own.</p></section>
 
-    <section className="category-wrap" id="collections"><div className="section-head"><div><p className="eyebrow">SHOP BY CATEGORY</p><h2>Find your uniform.</h2></div><a href="#shop" className="text-link">VIEW ALL <ArrowRight size={15} /></a></div><div className="category-grid">{categories.map(([name, image]) => <a className="category-card" href="#shop" key={name} onClick={() => setActiveCategory(name[0] + name.slice(1).toLowerCase())}><img src={image} alt={name} /><div><span>{name}</span><ArrowRight size={17} /></div></a>)}</div></section>
+    <section className="category-wrap" id="collections"><div className="section-head"><div><p className="eyebrow">SHOP BY CATEGORY</p><h2>Find your uniform.</h2></div><a href="#shop" className="text-link">VIEW ALL <ArrowRight size={15} /></a></div><div className="category-grid">{categoryCatalog.map(([name, image]) => <a className="category-card" href="#shop" key={name} onClick={() => { const match = catalog.find(product => product.category.toLowerCase() === name.toLowerCase()); setActiveCategory(match?.category || name.replace('T-SHIRTS', 'T-Shirts').toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase())) }}><img src={image} alt={name} /><div><span>{name}</span><ArrowRight size={17} /></div></a>)}</div></section>
 
     <section className="shop" id="shop"><div className="section-head"><div><p className="eyebrow">THE LATEST DROP</p><h2>Made for now.</h2></div><div className="shop-tools"><div className="search"><Search size={16} /><input id="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search pieces" /></div><button className="filter">FILTER <ChevronDown size={15} /></button></div></div><div className="chips"><button className={activeCategory === 'All' ? 'active' : ''} onClick={() => setActiveCategory('All')}>ALL</button>{['T-Shirts', 'Shirts', 'Trousers', 'Jackets'].map(c => <button className={activeCategory === c ? 'active' : ''} key={c} onClick={() => setActiveCategory(c)}>{c.toUpperCase()}</button>)}</div><div className="product-grid">{shown.map(p => <ProductCard key={p.id} product={p} liked={wishlist.includes(p.id)} onLike={() => toggleWishlist(p.id)} onAdd={() => addCart(p)} />)}</div></section>
 
@@ -41,7 +55,7 @@ export default function Home() {
 
     <footer id="about"><div className="footer-brand"><a className="logo" href="#top">LATTEY <span>WALLAH</span></a><p>Everyday style. Elevated.</p></div><div className="footer-links"><div><p className="eyebrow">EXPLORE</p><a href="#shop">Shop all</a><a href="#collections">Collections</a><a href="#about">Our story</a></div><div><p className="eyebrow">HELP</p><a href="#about">Contact</a><a href="#about">Shipping & returns</a><a href="#about">Size guide</a></div><div><p className="eyebrow">FOLLOW ALONG</p><a href="#about">Instagram ↗</a><a href="#about">Pinterest ↗</a></div></div><div className="footer-bottom"><span>© 2024 LATTEY WALLAH</span><span>MADE WITH INTENTION IN INDIA</span><span>PRIVACY · TERMS</span></div></footer>
 
-    {cartOpen && <div className="overlay" onClick={() => setCartOpen(false)}><aside className="cart" onClick={e => e.stopPropagation()}><div className="cart-head"><div><p className="eyebrow">YOUR BAG</p><h2>{cart.length} {cart.length === 1 ? 'item' : 'items'}</h2></div><button className="icon" onClick={() => setCartOpen(false)}><X /></button></div>{cart.length ? <><div className="cart-list">{cart.map((p, i) => <div className="cart-item" key={`${p.id}-${i}`}><img src={p.image} alt="" /><div><b>{p.name}</b><span>{p.color} · M</span><strong>{money(p.price)}</strong></div><button onClick={() => setCart(v => v.filter((_, j) => j !== i))}><X size={15} /></button></div>)}</div><div className="cart-total"><span>Subtotal</span><b>{money(cart.reduce((a, p) => a + p.price, 0))}</b></div><button className="button button-dark full">CHECKOUT <ArrowRight size={16} /></button></> : <div className="empty"><Sparkles size={24} /><p>Your bag is waiting.</p><a href="#shop" onClick={() => setCartOpen(false)}>Explore the edit →</a></div>}</aside></div>}
+    {cartOpen && <div className="overlay" onClick={() => setCartOpen(false)}><aside className="cart" onClick={e => e.stopPropagation()}><div className="cart-head"><div><p className="eyebrow">YOUR BAG</p><h2>{cart.length} {cart.length === 1 ? 'item' : 'items'}</h2></div><button className="icon" onClick={() => setCartOpen(false)}><X /></button></div>{cart.length ? <><div className="cart-list">{cart.map((p, i) => <div className="cart-item" key={`${p.id}-${i}`}><img src={p.image} alt="" /><div><b>{p.name}</b><span>{p.color} · M</span><strong>{money(p.price)}</strong></div><button onClick={() => { const next = cart.filter((_, j) => j !== i); setCart(next); localStorage.setItem('lattey-wallah-cart', JSON.stringify(next)) }}><X size={15} /></button></div>)}</div><div className="cart-total"><span>Subtotal</span><b>{money(cart.reduce((a, p) => a + p.price, 0))}</b></div><a className="button button-dark full" href="/checkout">CHECKOUT <ArrowRight size={16} /></a></> : <div className="empty"><Sparkles size={24} /><p>Your bag is waiting.</p><a href="#shop" onClick={() => setCartOpen(false)}>Explore the edit →</a></div>}</aside></div>}
   </main>
 }
 
