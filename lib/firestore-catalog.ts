@@ -43,10 +43,10 @@ export async function loadCategoryNodesFromFirestore(fallback: CategoryNode[]) {
   } catch { return fallback }
 }
 
-export async function saveCategoryToFirestore(name: string) {
+export async function saveCategoryToFirestore(name: string, parentId: string | null = null) {
   if (!firebaseConfigured) return
   const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  try { await setDoc(doc(db, 'categories', id), { name, active: true, enabled: true, parentId: null, slug: id, sortOrder: Date.now(), position: Date.now(), updatedAt: new Date().toISOString() }) } catch { return }
+  try { await setDoc(doc(db, 'categories', id), { name, active: true, enabled: true, parentId, slug: id, sortOrder: Date.now(), position: Date.now(), updatedAt: new Date().toISOString() }) } catch { return }
 }
 
 export async function deleteCategoryFromFirestore(name: string) {
