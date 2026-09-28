@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, ChevronDown, Heart, Menu, Search, ShoppingBag, Sparkles, X } from 'lucide-react'
 import { categories, products, Product } from '@/lib/products'
+import { loadCategoriesFromFirestore, loadProductsFromFirestore } from '@/lib/firestore-catalog'
 
 const money = (n: number) => `₹${n.toLocaleString('en-IN')}`
 
@@ -17,15 +18,18 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    const loadCatalog = () => {
+    const loadCatalog = async () => {
       const savedProducts = localStorage.getItem('lattey-wallah-products')
       const savedCategories = localStorage.getItem('lattey-wallah-categories')
-      if (savedProducts) setCatalog(JSON.parse(savedProducts))
-      if (savedCategories) setCategoryCatalog(JSON.parse(savedCategories).map((name: string) => [name.toUpperCase(), 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=85']))
+      const loadedProducts = await loadProductsFromFirestore(savedProducts ? JSON.parse(savedProducts) : products)
+      const loadedCategories = await loadCategoriesFromFirestore(savedCategories ? JSON.parse(savedCategories) : categories.map(([name]) => name))
+      setCatalog(loadedProducts)
+      setCategoryCatalog(loadedCategories.map(name => [name.toUpperCase(), 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=85']))
     }
-    loadCatalog()
-    window.addEventListener('lattey-catalog-updated', loadCatalog)
-    return () => window.removeEventListener('lattey-catalog-updated', loadCatalog)
+    loadCatalog().catch(() => undefined)
+    const refresh = () => { loadCatalog().catch(() => undefined) }
+    window.addEventListener('lattey-catalog-updated', refresh)
+    return () => window.removeEventListener('lattey-catalog-updated', refresh)
   }, [])
 
   const shown = useMemo(() => catalog.filter(p => (activeCategory === 'All' || p.category === activeCategory) && p.name.toLowerCase().includes(query.toLowerCase())), [activeCategory, query, catalog])
