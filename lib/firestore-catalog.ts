@@ -38,8 +38,8 @@ export async function loadCategoriesFromFirestore(fallback: string[]) {
 export async function loadCategoryNodesFromFirestore(fallback: CategoryNode[]) {
   if (!firebaseConfigured) return fallback
   try {
-    const snapshot = await getDocs(query(collection(db, 'categories'), where('active', '==', true)))
-    return snapshot.docs.map(item => ({ id: item.id, name: String(item.data().name), slug: String(item.data().slug || item.id), parentId: (item.data().parentId as string | null) || null, image: item.data().image as string | undefined, active: true, sortOrder: Number(item.data().sortOrder || 0) })).sort((a, b) => a.sortOrder - b.sortOrder)
+    const snapshot = await getDocs(query(collection(db, 'categories'), where('enabled', '==', true)))
+    return snapshot.docs.map(item => ({ id: item.id, name: String(item.data().name), slug: String(item.data().slug || item.id), parentId: (item.data().parentId as string | null) || null, image: item.data().image as string | undefined, active: item.data().active !== false, sortOrder: Number(item.data().sortOrder || item.data().position || 0) })).filter(item => item.active).sort((a, b) => a.sortOrder - b.sortOrder)
   } catch { return fallback }
 }
 
