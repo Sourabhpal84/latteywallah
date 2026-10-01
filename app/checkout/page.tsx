@@ -6,6 +6,8 @@ import { ArrowLeft, ArrowRight, Minus, Plus, MessageCircle, Trash2 } from 'lucid
 import { calculateDelivery, defaultDeliverySettings, defaultServiceArea, getBulkOrderUrl, isServiceableLocation, locationForPincode, serviceableLocations, serviceableStates } from '@/lib/commerce'
 import { auth } from '@/lib/firebase'
 import { CART_UPDATED_EVENT, CartLine, readCart, writeCart } from '@/lib/cart'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
 declare global { interface Window { Razorpay?: new (options: Record<string, unknown>) => { open: () => void } } }
 const money = (value: number) => `₹${value.toLocaleString('en-IN')}`
@@ -14,7 +16,7 @@ const loadRazorpay = () => new Promise<boolean>(resolve => { if (window.Razorpay
 export default function CheckoutPage() {
   const [lines, setLines] = useState<CartLine[]>([]); const [form, setForm] = useState({ name: '', phone: '', address: '', city: '', state: '', pincode: '', instructions: '' }); const [outside, setOutside] = useState(false); const [userId, setUserId] = useState(''); const [userReady, setUserReady] = useState(false); const [error, setError] = useState(''); const [processing, setProcessing] = useState(false)
   useEffect(() => { setLines(readCart()); const sync = () => setLines(readCart()); window.addEventListener(CART_UPDATED_EVENT, sync); return () => window.removeEventListener(CART_UPDATED_EVENT, sync) }, [])
-  useEffect(() => { if (!auth) { setUserReady(true); return }; return auth.onAuthStateChanged(user => { setUserId(user?.uid || ''); setUserReady(true) }) }, [])
+  useEffect(() => { if (!auth) { setUserReady(true); return }; return auth.onAuthStateChanged(async user => { setUserId(user?.uid || ''); if (user) { const customer = await getDoc(doc(db, 'customers', user.uid)); const data = customer.data() || {}; const saved = (data.addresses || []).find((address: { isDefault?: boolean }) => address.isDefault) || data; if (saved?.address) setForm({ name: String(saved.name || ''), phone: String(saved.phone || ''), address: String(saved.address || ''), city: String(saved.city || ''), state: String(saved.state || ''), pincode: String(saved.pincode || ''), instructions: String(saved.instructions || '') }) }; setUserReady(true) }) }, [])
   const updateQuantity = (index: number, amount: number) => { const next = lines.map((line, itemIndex) => itemIndex === index ? { ...line, quantity: Math.max(0, line.quantity + amount) } : line).filter(line => line.quantity > 0); setLines(next); writeCart(next) }
   const subtotal = useMemo(() => lines.reduce((total, line) => total + line.price * line.quantity, 0), [lines]); const settings = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lattey-wallah-delivery-settings') || JSON.stringify(defaultDeliverySettings)) : defaultDeliverySettings; const serviceArea = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lattey-wallah-service-area') || JSON.stringify(defaultServiceArea)) : defaultServiceArea; const delivery = calculateDelivery(subtotal, settings); const total = subtotal + delivery
   const changePincode = (value: string) => { const pincode = value.replace(/\D/g, '').slice(0, 6); const detected = pincode.length === 6 ? locationForPincode(pincode) : undefined; setForm(current => ({ ...current, pincode, ...(detected ? { state: detected.state } : {}) })) }
