@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDocs, onSnapshot, query, setDoc, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Product } from '@/lib/products'
 import { CategoryNode } from '@/lib/category-tree'
@@ -16,13 +16,13 @@ export async function loadProductsFromFirestore(fallback: Product[]) {
 }
 
 export async function saveProductToFirestore(product: Product) {
-  if (!firebaseConfigured) return
-  try { await setDoc(doc(db, 'products', product.id), { ...product, active: true, updatedAt: new Date().toISOString() }) } catch { return }
+  if (!firebaseConfigured) throw new Error('Firebase is not configured.')
+  await setDoc(doc(db, 'products', product.id), { ...product, active: true, updatedAt: new Date().toISOString() })
 }
 
 export async function deleteProductFromFirestore(id: string) {
-  if (!firebaseConfigured) return
-  try { await deleteDoc(doc(db, 'products', id)) } catch { return }
+  if (!firebaseConfigured) throw new Error('Firebase is not configured.')
+  await deleteDoc(doc(db, 'products', id))
 }
 
 export async function loadCategoriesFromFirestore(fallback: string[]) {
@@ -44,13 +44,23 @@ export async function loadCategoryNodesFromFirestore(fallback: CategoryNode[]) {
 }
 
 export async function saveCategoryToFirestore(name: string, parentId: string | null = null) {
-  if (!firebaseConfigured) return
+  if (!firebaseConfigured) throw new Error('Firebase is not configured.')
   const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  try { await setDoc(doc(db, 'categories', id), { name, active: true, enabled: true, parentId, slug: id, sortOrder: Date.now(), position: Date.now(), updatedAt: new Date().toISOString() }) } catch { return }
+  await setDoc(doc(db, 'categories', id), { name, active: true, enabled: true, parentId, slug: id, sortOrder: Date.now(), position: Date.now(), updatedAt: new Date().toISOString() })
 }
 
 export async function deleteCategoryFromFirestore(name: string) {
-  if (!firebaseConfigured) return
+  if (!firebaseConfigured) throw new Error('Firebase is not configured.')
   const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  try { await deleteDoc(doc(db, 'categories', id)) } catch { return }
+  await deleteDoc(doc(db, 'categories', id))
+}
+
+export function watchCatalog(onProducts: (products: Product[]) => void, onCategories: (categories: CategoryNode[]) => void, onError: (error: Error) => void) {
+  if (!firebaseConfigured) return () => undefined
+  const productsQuery = query(collection(db, 'products'), where('active', '==', true))
+  const categoriesQuery = query(collection(db, 'categories'), where('enabled', '==', true))
+  const report = (error: Error) => onError(error)
+  const stopProducts = onSnapshot(productsQuery, snapshot => onProducts(snapshot.docs.map(item => item.data() as Product)), report)
+  const stopCategories = onSnapshot(categoriesQuery, snapshot => onCategories(snapshot.docs.map(item => ({ id: item.id, name: String(item.data().name), slug: String(item.data().slug || item.id), parentId: (item.data().parentId as string | null) || null, image: item.data().image as string | undefined, active: item.data().active !== false, sortOrder: Number(item.data().sortOrder || item.data().position || 0) })).filter(item => item.active).sort((a, b) => a.sortOrder - b.sortOrder)), report)
+  return () => { stopProducts(); stopCategories() }
 }
