@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Heart, Menu, Search, ShoppingBag, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Heart, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { Product } from "@/lib/products";
 import { watchCatalog } from "@/lib/firestore-catalog";
 import { CategoryNode, descendantsOf } from "@/lib/category-tree";
@@ -26,6 +28,8 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const subcategoryRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setCart(readCart());
     const syncCart = () => setCart(readCart());
@@ -36,6 +40,7 @@ export default function Home() {
       window.removeEventListener("storage", syncCart);
     };
   }, []);
+  useEffect(() => (auth ? onAuthStateChanged(auth, setUser) : undefined), []);
   useEffect(
     () =>
       watchCatalog(setCatalog, setCategoryNodes, (error) =>
@@ -46,6 +51,18 @@ export default function Home() {
   const selected = categoryNodes.find(
     (category) => category.id === activeCategory,
   );
+  useEffect(() => {
+    if (selected && !selected.parentId) {
+      window.setTimeout(
+        () =>
+          subcategoryRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          }),
+        0,
+      );
+    }
+  }, [selected]);
   const rootCategories = categoryNodes.filter((category) => !category.parentId);
   const displayedCategories = selected
     ? categoryNodes.filter((category) => category.parentId === selected.id)
@@ -151,6 +168,9 @@ export default function Home() {
           >
             <Heart />
           </button>
+          <a className="icon" href={user ? "/account" : "/account/login"} aria-label={user ? "My account" : "Login"}>
+            <UserRound />
+          </a>
           <button
             className="bag"
             onClick={() => setCartOpen(true)}
@@ -189,47 +209,73 @@ export default function Home() {
         </div>
         <div className="category-grid">
           {rootCategories.map((category) => (
-              <a
-                className="category-card"
-                href={category.parentId ? "#shop" : "#collections"}
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-              >
-                <img
-                  src={
-                    category.image ||
-                    products.find((product) => product.categoryId === category.id)
-                      ?.image ||
-                    ""
-                  }
-                  alt={category.name}
-                />
-                <div>
-                  <span>{category.name.toUpperCase()}</span>
-                  <ArrowRight size={17} />
-                </div>
-              </a>
-            ))}
+            <a
+              className="category-card"
+              href={category.parentId ? "#shop" : "#collections"}
+              key={category.id}
+              onClick={() => setActiveCategory(category.id)}
+            >
+              <img
+                src={
+                  category.image ||
+                  products.find((product) => product.categoryId === category.id)
+                    ?.image ||
+                  ""
+                }
+                alt={category.name}
+              />
+              <div>
+                <span>{category.name.toUpperCase()}</span>
+                <ArrowRight size={17} />
+              </div>
+            </a>
+          ))}
         </div>
         {selected && !selected.parentId && (
-          <div className="subcategory-section">
+          <div className="subcategory-section" ref={subcategoryRef}>
             <div className="section-head subcategory-head">
               <div>
                 <p className="eyebrow">{selected.name.toUpperCase()}</p>
                 <h2>Shop subcategories.</h2>
               </div>
-              <button className="text-link" onClick={() => setActiveCategory("All")}>VIEW ALL</button>
+              <button
+                className="text-link"
+                onClick={() => setActiveCategory("All")}
+              >
+                VIEW ALL
+              </button>
             </div>
             {displayedCategories.length ? (
               <div className="category-grid subcategory-grid">
                 {displayedCategories.map((category) => (
-                  <a className="category-card" href="#shop" key={category.id} onClick={() => setActiveCategory(category.id)}>
-                    <img src={category.image || products.find((product) => product.categoryId === category.id)?.image || ""} alt={category.name} />
-                    <div><span>{category.name.toUpperCase()}</span><ArrowRight size={17} /></div>
+                  <a
+                    className="category-card"
+                    href="#shop"
+                    key={category.id}
+                    onClick={() => setActiveCategory(category.id)}
+                  >
+                    <img
+                      src={
+                        category.image ||
+                        products.find(
+                          (product) => product.categoryId === category.id,
+                        )?.image ||
+                        ""
+                      }
+                      alt={category.name}
+                    />
+                    <div>
+                      <span>{category.name.toUpperCase()}</span>
+                      <ArrowRight size={17} />
+                    </div>
                   </a>
                 ))}
               </div>
-            ) : <p className="empty-subcategories">No subcategories have been added to {selected.name} yet.</p>}
+            ) : (
+              <p className="empty-subcategories">
+                No subcategories have been added to {selected.name} yet.
+              </p>
+            )}
           </div>
         )}
       </section>
