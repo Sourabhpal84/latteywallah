@@ -1,66 +1,65 @@
-import { collection, deleteDoc, doc, getDocs, onSnapshot, query, setDoc, where } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query, setDoc, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Product } from '@/lib/products'
 import { CategoryNode } from '@/lib/category-tree'
 
+// Canonical production catalog: Firestore /products and /categories only.
+// Each returned `id` is the actual Firestore document ID, used for all edits/deletes.
 export const firebaseConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && process.env.NEXT_PUBLIC_FIREBASE_API_KEY)
+const requireFirebase = () => { if (!firebaseConfigured) throw new Error('Firebase is not configured.') }
 
-export async function loadProductsFromFirestore(fallback: Product[]) {
-  if (!firebaseConfigured) return fallback
-  try {
-    const snapshot = await getDocs(query(collection(db, 'products'), where('active', '==', true)))
-    return snapshot.docs.map(item => item.data() as Product)
-  } catch {
-    return fallback
-  }
+const toProduct = (id: string, data: Record<string, unknown>): Product => ({ ...data, id } as Product)
+const toCategory = (id: string, data: Record<string, unknown>): CategoryNode => ({ id, name: String(data.name), slug: String(data.slug || id), parentId: (data.parentId as string | null) || null, image: data.image as string | undefined, active: data.active !== false, sortOrder: Number(data.sortOrder || data.position || 0) })
+
+export async function getProducts() {
+  requireFirebase()
+  const snapshot = await getDocs(query(collection(db, 'products'), where('active', '==', true)))
+  return snapshot.docs.map(item => toProduct(item.id, item.data()))
 }
 
-export async function saveProductToFirestore(product: Product) {
-  if (!firebaseConfigured) throw new Error('Firebase is not configured.')
-  await setDoc(doc(db, 'products', product.id), { ...product, active: true, updatedAt: new Date().toISOString() })
+export async function getCategories() {
+  requireFirebase()
+  const snapshot = await getDocs(query(collection(db, 'categories'), where('enabled', '==', true)))
+  return snapshot.docs.map(item => toCategory(item.id, item.data())).filter(item => item.active).sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
-export async function deleteProductFromFirestore(id: string) {
-  if (!firebaseConfigured) throw new Error('Firebase is not configured.')
+export async function addProduct(product: Omit<Product, 'id'>) {
+  requireFirebase()
+  const reference = await addDoc(collection(db, 'products'), { ...product, active: true, updatedAt: new Date().toISOString() })
+  return { ...product, id: reference.id } as Product
+}
+
+export async function updateProduct(id: string, product: Partial<Product>) {
+  requireFirebase()
+  await setDoc(doc(db, 'products', id), { ...product, updatedAt: new Date().toISOString() }, { merge: true })
+}
+
+export async function deleteProduct(id: string) {
+  requireFirebase()
   await deleteDoc(doc(db, 'products', id))
 }
 
-export async function loadCategoriesFromFirestore(fallback: string[]) {
-  if (!firebaseConfigured) return fallback
-  try {
-    const snapshot = await getDocs(query(collection(db, 'categories'), where('enabled', '==', true)))
-    return snapshot.docs.map(item => String(item.data().name)).filter(Boolean)
-  } catch {
-    return fallback
-  }
+export async function addCategory(category: Omit<CategoryNode, 'id'>) {
+  requireFirebase()
+  const reference = await addDoc(collection(db, 'categories'), { ...category, active: true, enabled: true, updatedAt: new Date().toISOString() })
+  return { ...category, id: reference.id }
 }
 
-export async function loadCategoryNodesFromFirestore(fallback: CategoryNode[]) {
-  if (!firebaseConfigured) return fallback
-  try {
-    const snapshot = await getDocs(query(collection(db, 'categories'), where('enabled', '==', true)))
-    return snapshot.docs.map(item => ({ id: item.id, name: String(item.data().name), slug: String(item.data().slug || item.id), parentId: (item.data().parentId as string | null) || null, image: item.data().image as string | undefined, active: item.data().active !== false, sortOrder: Number(item.data().sortOrder || item.data().position || 0) })).filter(item => item.active).sort((a, b) => a.sortOrder - b.sortOrder)
-  } catch { return fallback }
+export async function updateCategory(id: string, category: Partial<CategoryNode>) {
+  requireFirebase()
+  await setDoc(doc(db, 'categories', id), { ...category, updatedAt: new Date().toISOString() }, { merge: true })
 }
 
-export async function saveCategoryToFirestore(name: string, parentId: string | null = null) {
-  if (!firebaseConfigured) throw new Error('Firebase is not configured.')
-  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  await setDoc(doc(db, 'categories', id), { name, active: true, enabled: true, parentId, slug: id, sortOrder: Date.now(), position: Date.now(), updatedAt: new Date().toISOString() })
-}
-
-export async function deleteCategoryFromFirestore(name: string) {
-  if (!firebaseConfigured) throw new Error('Firebase is not configured.')
-  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+export async function deleteCategory(id: string) {
+  requireFirebase()
   await deleteDoc(doc(db, 'categories', id))
 }
 
 export function watchCatalog(onProducts: (products: Product[]) => void, onCategories: (categories: CategoryNode[]) => void, onError: (error: Error) => void) {
-  if (!firebaseConfigured) return () => undefined
+  if (!firebaseConfigured) { onError(new Error('Firebase is not configured.')); return () => undefined }
   const productsQuery = query(collection(db, 'products'), where('active', '==', true))
   const categoriesQuery = query(collection(db, 'categories'), where('enabled', '==', true))
-  const report = (error: Error) => onError(error)
-  const stopProducts = onSnapshot(productsQuery, snapshot => onProducts(snapshot.docs.map(item => item.data() as Product)), report)
-  const stopCategories = onSnapshot(categoriesQuery, snapshot => onCategories(snapshot.docs.map(item => ({ id: item.id, name: String(item.data().name), slug: String(item.data().slug || item.id), parentId: (item.data().parentId as string | null) || null, image: item.data().image as string | undefined, active: item.data().active !== false, sortOrder: Number(item.data().sortOrder || item.data().position || 0) })).filter(item => item.active).sort((a, b) => a.sortOrder - b.sortOrder)), report)
+  const stopProducts = onSnapshot(productsQuery, snapshot => onProducts(snapshot.docs.map(item => toProduct(item.id, item.data()))), onError)
+  const stopCategories = onSnapshot(categoriesQuery, snapshot => onCategories(snapshot.docs.map(item => toCategory(item.id, item.data())).filter(item => item.active).sort((a, b) => a.sortOrder - b.sortOrder)), onError)
   return () => { stopProducts(); stopCategories() }
 }

@@ -3,14 +3,14 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Minus, Plus, ShoppingBag, MessageCircle } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { loadProductsFromFirestore } from '@/lib/firestore-catalog'
-import { products, Product, ProductVariant } from '@/lib/products'
+import { watchCatalog } from '@/lib/firestore-catalog'
+import { Product, ProductVariant } from '@/lib/products'
 import { addCartLine, readCart, writeCart, CartLine } from '@/lib/cart'
 
 const money = (value: number) => `₹${value.toLocaleString('en-IN')}`
 export default function ProductPage({ params }: { params: { id: string } }) {
   const [productData, setProduct] = useState<Product | null>(null); const [loading, setLoading] = useState(true); const [imageIndex, setImageIndex] = useState(0); const [color, setColor] = useState(''); const [size, setSize] = useState(''); const [quantity, setQuantity] = useState(1)
-  useEffect(() => { const load = async () => { try { const local = JSON.parse(localStorage.getItem('lattey-wallah-products') || '[]'); const catalog = await loadProductsFromFirestore(local.length ? local : products); setProduct(catalog.find(item => item.id === params.id) || null) } finally { setLoading(false) } }; load() }, [params.id])
+  useEffect(() => watchCatalog(catalog => { setProduct(catalog.find(item => item.id === params.id) || null); setLoading(false) }, () => undefined, () => setLoading(false)), [params.id])
   const whatsappText = useMemo(() => productData ? `Hello lattey wala,\n\nI want to order:\n${productData.name}\nSize: ${size || 'Not selected'}\nColor: ${color || productData.color}\nQuantity: ${quantity}\nPrice: ${money(productData.price)}` : '', [productData, size, color, quantity])
   if (loading) return <main className="detail-page"><div className="empty-search"><h3>Loading product…</h3></div></main>
   if (!productData) return <main className="detail-page"><div className="empty-search"><h3>Product not found</h3><Link href="/#shop" className="button button-dark">BACK TO SHOP</Link></div></main>
