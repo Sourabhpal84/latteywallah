@@ -1,16 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { signOut, User } from 'firebase/auth'
 import { collection, getDocs, query, where } from 'firebase/firestore'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { auth, db } from '@/lib/firebase'
 
-export default function AccountPage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [orders, setOrders] = useState<Array<{ id: string; totalAmount: number; orderStatus: string }>>([])
-  useEffect(() => { if (!auth) return; return auth.onAuthStateChanged(async current => { setUser(current); if (current) { const snapshot = await getDocs(query(collection(db, 'orders'), where('customerId', '==', current.uid))); setOrders(snapshot.docs.map(item => ({ id: item.id, ...(item.data() as { totalAmount: number; orderStatus: string }) }))) } }) }, [])
-  if (!user) return <main className="order-page"><section className="order-card"><h1>Sign in to view your account.</h1><Link className="button button-dark" href="/account/login">SIGN IN <ArrowRight size={15} /></Link></section></main>
-  return <main className="order-page"><header className="detail-header"><Link href="/" className="back-link"><ArrowLeft size={16} /> STORE</Link><span className="logo">MY ACCOUNT</span><button className="button button-dark" onClick={() => signOut(auth)}>LOG OUT</button></header><section className="account-content"><p className="eyebrow">ACCOUNT</p><h1>{user.email}</h1><div className="account-orders"><div className="section-head"><h2>My orders</h2></div>{orders.length ? orders.map(order => <Link className="account-order" href={`/orders/${order.id}`} key={order.id}><span>#{order.id}</span><b>₹{Number(order.totalAmount || 0).toLocaleString('en-IN')}</b><em>{order.orderStatus || 'PENDING'}</em><ArrowRight size={15} /></Link>) : <p>No orders yet.</p>}</div></section></main>
-}
+type Order = { id: string; displayOrderId?: string; totalAmount?: number; orderStatus?: string }
+export default function AccountPage() { const [user, setUser] = useState<User | null>(null); const [name, setName] = useState(''); const [orders, setOrders] = useState<Order[]>([]); useEffect(() => { if (!auth) return; return auth.onAuthStateChanged(async current => { setUser(current); if (current) { const profile = await (await import('firebase/firestore')).getDoc((await import('firebase/firestore')).doc(db, 'customers', current.uid)); setName(String(profile.data()?.name || current.email || 'Customer')); const snapshot = await getDocs(query(collection(db, 'orders'), where('customerId', '==', current.uid))); setOrders(snapshot.docs.map(item => ({ id: item.id, ...(item.data() as Omit<Order, 'id'>) }))) } }) }, []); if (!user) return <main className="order-page"><section className="order-card"><h1>Sign in to view your account.</h1><Link className="button button-dark" href="/account/login">SIGN IN <ArrowRight size={15} /></Link></section></main>; const recent = orders[0]; return <main className="order-page"><header className="detail-header"><Link href="/" className="back-link"><ArrowLeft size={16} /> STORE</Link><span className="logo">MY ACCOUNT</span><button className="button button-dark" onClick={() => signOut(auth)}>LOG OUT</button></header><section className="account-content"><p className="eyebrow">ACCOUNT</p><h1>Hello, {name}</h1><div className="account-actions"><Link className="button button-dark" href="/orders">MY ORDERS</Link><Link className="button button-outline" href="/account/profile">PROFILE & SAVED ADDRESS</Link></div>{recent && <div className="recent-order"><p className="eyebrow">RECENT ORDER</p><b>#{recent.displayOrderId || recent.id}</b><strong>₹{Number(recent.totalAmount || 0).toLocaleString('en-IN')}</strong><em>{recent.orderStatus || 'NEW'}</em><Link href={`/orders/${recent.id}`}>TRACK ORDER <ArrowRight size={15} /></Link></div>}</section></main> }
