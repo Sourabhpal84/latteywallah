@@ -33,6 +33,6 @@ export function locationForPincode(pincode: string) {
 }
 
 export function getBulkOrderUrl(number: string, details: { name: string; phone: string; location: string; requirement: string }) {
-  const message = `Hello Lattey Wallah,\n\nI want to enquire about a bulk/outside-service-area order.\n\nName: ${details.name}\nPhone: ${details.phone}\nLocation: ${details.location}\nRequirement: ${details.requirement}\n\nPlease contact me regarding availability and delivery.`
+  const message = `Hello lattey wala,\n\nI want to enquire about a bulk/outside-service-area order.\n\nName: ${details.name}\nPhone: ${details.phone}\nLocation: ${details.location}\nRequirement: ${details.requirement}\n\nPlease contact me regarding availability and delivery.`
   return `https://wa.me/${number.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`
 }

@@ -1,4 +1,4 @@
-# Lattey Wallah
+# lattey wala
 
 Premium fashion commerce starter built with Next.js, TypeScript, Tailwind-ready styling, PostgreSQL and Prisma.
 

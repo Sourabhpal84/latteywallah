@@ -6,7 +6,9 @@ service cloud.firestore {
     match /categories/{id} { allow read: if resource.data.enabled == true || isAdmin(); allow write: if isAdmin(); }
     match /serviceAreas/{id} { allow read: if true; allow write: if isAdmin(); }
     match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /orders/{id} { allow create: if request.auth != null && request.resource.data.customerId == request.auth.uid && request.resource.data.paymentStatus == 'PENDING'; allow read: if isAdmin() || (request.auth != null && resource.data.customerId == request.auth.uid); allow update: if isAdmin(); }
+    match /orders/{id} { allow create: if false; allow read: if isAdmin() || (request.auth != null && resource.data.customerId == request.auth.uid); allow update: if isAdmin(); }
+    match /checkoutRequests/{id} { allow read, write: if false; }
+    match /counters/{id} { allow read, write: if false; }
     match /admins/{id} { allow read, write: if isAdmin(); }
     match /{document=**} { allow read, write: if false; }
   }

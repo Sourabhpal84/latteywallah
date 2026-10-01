@@ -4,7 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore'
 
 function getAdminApp() {
   if (getApps().length) return getApps()[0]
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n').replace(/\\r/g, '').trim()
   if (!process.env.FIREBASE_CLIENT_EMAIL || !privateKey || !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) throw new Error('Firebase Admin environment variables are missing')
   return initializeApp({ credential: cert({ projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID, clientEmail: process.env.FIREBASE_CLIENT_EMAIL, privateKey }) })
 }
