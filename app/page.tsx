@@ -188,7 +188,7 @@ export default function Home() {
           </div>
         </div>
         <div className="category-grid">
-          {displayedCategories.map((category) => (
+          {rootCategories.map((category) => (
               <a
                 className="category-card"
                 href={category.parentId ? "#shop" : "#collections"}
@@ -211,6 +211,27 @@ export default function Home() {
               </a>
             ))}
         </div>
+        {selected && !selected.parentId && (
+          <div className="subcategory-section">
+            <div className="section-head subcategory-head">
+              <div>
+                <p className="eyebrow">{selected.name.toUpperCase()}</p>
+                <h2>Shop subcategories.</h2>
+              </div>
+              <button className="text-link" onClick={() => setActiveCategory("All")}>VIEW ALL</button>
+            </div>
+            {displayedCategories.length ? (
+              <div className="category-grid subcategory-grid">
+                {displayedCategories.map((category) => (
+                  <a className="category-card" href="#shop" key={category.id} onClick={() => setActiveCategory(category.id)}>
+                    <img src={category.image || products.find((product) => product.categoryId === category.id)?.image || ""} alt={category.name} />
+                    <div><span>{category.name.toUpperCase()}</span><ArrowRight size={17} /></div>
+                  </a>
+                ))}
+              </div>
+            ) : <p className="empty-subcategories">No subcategories have been added to {selected.name} yet.</p>}
+          </div>
+        )}
       </section>
       <section className="shop" id="shop">
         <div className="section-head">
