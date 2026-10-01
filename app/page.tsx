@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Heart, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import {
+  ArrowRight,
+  Heart,
+  Menu,
+  Search,
+  ShoppingBag,
+  UserRound,
+  X,
+} from "lucide-react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Product } from "@/lib/products";
@@ -168,7 +176,11 @@ export default function Home() {
           >
             <Heart />
           </button>
-          <a className="icon" href={user ? "/account" : "/account/login"} aria-label={user ? "My account" : "Login"}>
+          <a
+            className="icon"
+            href={user ? "/account" : "/account/login"}
+            aria-label={user ? "My account" : "Login"}
+          >
             <UserRound />
           </a>
           <button
@@ -231,6 +243,29 @@ export default function Home() {
             </a>
           ))}
         </div>
+      </section>
+      <section className="shop" id="shop">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">
+              {query ? `SEARCH RESULTS FOR “${query}”` : "THE LATEST DROP"}
+            </p>
+            <h2>
+              {query ? `${shown.length} products found` : "Made for now."}
+            </h2>
+          </div>
+          <div className="shop-tools">
+            <div className="search">
+              <Search size={16} />
+              <input
+                id="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search products"
+              />
+            </div>
+          </div>
+        </div>
         {selected && !selected.parentId && (
           <div className="subcategory-section" ref={subcategoryRef}>
             <div className="section-head subcategory-head">
@@ -278,29 +313,6 @@ export default function Home() {
             )}
           </div>
         )}
-      </section>
-      <section className="shop" id="shop">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">
-              {query ? `SEARCH RESULTS FOR “${query}”` : "THE LATEST DROP"}
-            </p>
-            <h2>
-              {query ? `${shown.length} products found` : "Made for now."}
-            </h2>
-          </div>
-          <div className="shop-tools">
-            <div className="search">
-              <Search size={16} />
-              <input
-                id="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search products"
-              />
-            </div>
-          </div>
-        </div>
         <div className="chips">
           <button
             className={activeCategory === "All" ? "active" : ""}
