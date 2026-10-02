@@ -109,14 +109,14 @@ export default function CheckoutPage() {
   const settings =
     typeof window !== "undefined"
       ? JSON.parse(
-          localStorage.getItem("lattey-WALA-delivery-settings") ||
+          localStorage.getItem("lattey-wala-delivery-settings") ||
             JSON.stringify(defaultDeliverySettings),
         )
       : defaultDeliverySettings;
   const serviceArea =
     typeof window !== "undefined"
       ? JSON.parse(
-          localStorage.getItem("lattey-WALA-service-area") ||
+          localStorage.getItem("lattey-wala-service-area") ||
             JSON.stringify(defaultServiceArea),
         )
       : defaultServiceArea;
@@ -171,8 +171,8 @@ export default function CheckoutPage() {
         key: created.keyId,
         amount: created.amount,
         currency: created.currency,
-        name: "lattey WALA",
-        description: "lattey WALA order",
+        name: "lattey wala",
+        description: "lattey wala order",
         order_id: created.orderId,
         prefill: {
           name: form.name,
@@ -239,7 +239,7 @@ export default function CheckoutPage() {
             <ArrowLeft size={16} /> BROWSE MENU
           </Link>
           <Link href="/" className="logo">
-            LATTEY <span>WALA</span>
+            LATTEY <span>wala</span>
           </Link>
           <span className="eyebrow">CHECKOUT</span>
         </header>
@@ -260,7 +260,7 @@ export default function CheckoutPage() {
           <ArrowLeft size={16} /> BROWSE MENU
         </Link>
         <Link href="/" className="logo">
-          LATTEY <span>WALA</span>
+          LATTEY <span></span>
         </Link>
         <span className="eyebrow">CART → DELIVERY → PAYMENT</span>
       </header>

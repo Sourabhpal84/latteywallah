@@ -15,19 +15,11 @@ import { auth } from "@/lib/firebase";
 import { Product } from "@/lib/products";
 import { watchCatalog } from "@/lib/firestore-catalog";
 import { CategoryNode, descendantsOf } from "@/lib/category-tree";
-import {
-  addCartLine,
-  CART_UPDATED_EVENT,
-  CartLine,
-  readCart,
-  writeCart,
-} from "@/lib/cart";
-import { useToast } from "@/components/toast";
+import { CART_UPDATED_EVENT, CartLine, readCart, writeCart } from "@/lib/cart";
 
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
 export default function Home() {
-  const { notify } = useToast();
   const [cart, setCart] = useState<CartLine[]>([]);
   const [catalog, setCatalog] = useState<Product[]>([]);
   const [categoryNodes, setCategoryNodes] = useState<CategoryNode[]>([]);
@@ -107,28 +99,6 @@ export default function Home() {
     });
   }, [catalog, query, selected, visibleIds]);
   const products = catalog;
-  const addCart = (product: Product) => {
-    const line: CartLine = {
-      productId: product.id,
-      name: product.name,
-      image: product.image,
-      color: product.color,
-      size: product.sizes[0] || "",
-      quantity: 1,
-      price: product.price,
-      sku: product.id,
-    };
-    const next = addCartLine(cart, line);
-    setCart(next);
-    writeCart(next);
-    setCartOpen(true);
-    notify({
-      kind: "success",
-      title: "Added to cart",
-      message: product.name,
-      image: product.image,
-    });
-  };
   const changeQuantity = (index: number, amount: number) => {
     const next = cart
       .map((line, itemIndex) =>
@@ -346,7 +316,6 @@ export default function Home() {
                       : [...value, product.id],
                   )
                 }
-                onAdd={() => addCart(product)}
               />
             ))}
           </div>
@@ -452,13 +421,20 @@ function ProductCard({
   product,
   liked,
   onLike,
-  onAdd,
 }: {
   product: Product;
   liked: boolean;
   onLike: () => void;
-  onAdd: () => void;
 }) {
+  const purchasableVariants = (product.variants || []).filter(
+    (variant) => variant.stock === undefined || variant.stock > 0,
+  );
+  const lowestSizePrice = purchasableVariants.length
+    ? Math.min(...purchasableVariants.map((variant) => variant.price))
+    : product.price;
+  const hasSizePricing = purchasableVariants.some(
+    (variant) => variant.price !== product.price,
+  );
   return (
     <article className="product-card">
       <div
@@ -480,10 +456,10 @@ function ProductCard({
           className="quick-add"
           onClick={(event) => {
             event.stopPropagation();
-            onAdd();
+            window.location.href = `/product/${product.id}`;
           }}
         >
-          ADD TO BAG <ArrowRight size={14} />
+          SELECT SIZE <ArrowRight size={14} />
         </button>
       </div>
       <div className="product-meta">
@@ -492,8 +468,12 @@ function ProductCard({
           <p>{product.color}</p>
         </div>
         <div className="price">
-          <b>{money(product.price)}</b>
-          {product.mrp > product.price && <del>{money(product.mrp)}</del>}
+          <b>
+            {hasSizePricing
+              ? `From ${money(lowestSizePrice)}`
+              : money(lowestSizePrice)}
+          </b>
+          {product.mrp > lowestSizePrice && <del>{money(product.mrp)}</del>}
         </div>
       </div>
     </article>

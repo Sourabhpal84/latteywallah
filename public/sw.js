@@ -1,4 +1,4 @@
-const CACHE = 'lattey-walla-static-v1'
+const CACHE = 'lattey-walla-static-v2'
 const OFFLINE = '/offline'
 
 self.addEventListener('install', event => {
