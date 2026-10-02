@@ -224,7 +224,7 @@ export default function AdminPage() {
           <ArrowLeft size={16} /> VIEW STORE
         </Link>
         <div className="logo">
-          LATTEY <span>WALLAH</span>
+          LATTEY <span>wala</span>
         </div>
         <div className="admin-header-actions">
           <span className="admin-badge">{user.email}</span>

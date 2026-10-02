@@ -109,7 +109,7 @@ export default function AdminCategoriesPage() {
           <ArrowLeft size={16} /> ADMIN
         </Link>
         <div className="logo">
-          LATTEY <span>WALLAH</span>
+          LATTEY <span>wala</span>
         </div>
         <span className="admin-badge">CATEGORY MANAGER</span>
       </header>

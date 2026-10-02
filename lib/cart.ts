@@ -1,4 +1,4 @@
-export const CART_STORAGE_KEY = 'lattey-wallah-cart'
+export const CART_STORAGE_KEY = 'lattey-wala-cart'
 export const CART_UPDATED_EVENT = 'lattey-cart-updated'
 
 export type CartLine = {

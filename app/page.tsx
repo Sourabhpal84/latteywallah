@@ -159,7 +159,7 @@ export default function Home() {
           <a href="#about">ABOUT</a>
         </nav>
         <a className="logo" href="#top">
-          LATTEY <span>WALLAH</span>
+          LATTEY <span>wala</span>
         </a>
         <div className="actions">
           <button
@@ -359,7 +359,7 @@ export default function Home() {
       <footer id="about">
         <div className="footer-brand">
           <a className="logo" href="#top">
-            LATTEY <span>WALLAH</span>
+            LATTEY <span>wala</span>
           </a>
           <p>Everyday style. Elevated.</p>
         </div>
