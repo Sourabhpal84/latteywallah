@@ -129,7 +129,7 @@ export default function Home() {
           <a href="#about">ABOUT</a>
         </nav>
         <a className="logo" href="#top">
-          LATTEY <span></span>
+          LATTEY <span>WALA</span>
         </a>
         <div className="actions">
           <button

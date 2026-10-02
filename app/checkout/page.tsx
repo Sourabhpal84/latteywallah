@@ -171,8 +171,8 @@ export default function CheckoutPage() {
         key: created.keyId,
         amount: created.amount,
         currency: created.currency,
-        name: "lattey wala",
-        description: "lattey wala order",
+        name: "LATTEY WALA",
+        description: "LATTEY WALA order",
         order_id: created.orderId,
         prefill: {
           name: form.name,
@@ -239,7 +239,7 @@ export default function CheckoutPage() {
             <ArrowLeft size={16} /> BROWSE MENU
           </Link>
           <Link href="/" className="logo">
-            LATTEY <span>wala</span>
+            LATTEY <span>WALA</span>
           </Link>
           <span className="eyebrow">CHECKOUT</span>
         </header>
@@ -260,7 +260,7 @@ export default function CheckoutPage() {
           <ArrowLeft size={16} /> BROWSE MENU
         </Link>
         <Link href="/" className="logo">
-          LATTEY <span></span>
+          LATTEY <span>WALA</span>
         </Link>
         <span className="eyebrow">CART → DELIVERY → PAYMENT</span>
       </header>

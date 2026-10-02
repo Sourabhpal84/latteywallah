@@ -85,7 +85,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
     (variant) => variant.color === selectedColor && variant.size === size,
   );
   const price = selected?.price ?? product.price;
-  const whatsappText = `Hello lattey WALA,\n\nI want to order:\n${product.name}\nSize: ${size || "Not selected"}\nColor: ${selectedColor}\nQuantity: ${quantity}\nPrice: ${money(price)}`;
+  const whatsappText = `Hello LATTEY WALA,\n\nI want to order:\n${product.name}\nSize: ${size || "Not selected"}\nColor: ${selectedColor}\nQuantity: ${quantity}\nPrice: ${money(price)}`;
   const addToCart = () => {
     if (!size) return notify({ kind: "warning", title: "Select a size first" });
     if (!selected || selected.stock < 1)
@@ -168,7 +168,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         </div>
         <section className="product-info">
           <p className="eyebrow">
-            {product.category.toUpperCase()} / lattey WALA
+            {product.category.toUpperCase()} / LATTEY WALA
           </p>
           <h1>{product.name}</h1>
           <div className="detail-price">
