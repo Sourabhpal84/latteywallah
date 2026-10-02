@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -57,6 +57,9 @@ export default function CheckoutPage() {
   const [userReady, setUserReady] = useState(false);
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
+  const checkoutKey = useRef(crypto.randomUUID());
+  const paymentOpening = useRef(false);
+  const paymentVerified = useRef(false);
   useEffect(() => {
     setLines(readCart());
     const sync = () => setLines(readCart());
@@ -134,6 +137,7 @@ export default function CheckoutPage() {
   };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (paymentOpening.current) return;
     setError("");
     if (!navigator.onLine) {
       setError("You’re offline. Reconnect before opening payment.");
@@ -151,6 +155,7 @@ export default function CheckoutPage() {
       setOutside(true);
       return;
     }
+    paymentOpening.current = true;
     setProcessing(true);
     try {
       const token = await auth.currentUser.getIdToken();
@@ -160,7 +165,11 @@ export default function CheckoutPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ items: lines, address: form }),
+        body: JSON.stringify({
+          items: lines,
+          address: form,
+          checkoutKey: checkoutKey.current,
+        }),
       });
       const created = await createResponse.json();
       if (!createResponse.ok)
@@ -180,11 +189,19 @@ export default function CheckoutPage() {
           email: auth.currentUser.email || "",
         },
         theme: { color: "#111111" },
+        modal: {
+          ondismiss: () => {
+            paymentOpening.current = false;
+            setProcessing(false);
+          },
+        },
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
           razorpay_signature: string;
         }) => {
+          if (paymentVerified.current) return;
+          paymentVerified.current = true;
           try {
             const verificationToken = await auth.currentUser!.getIdToken();
             const verification = await fetch("/api/razorpay/verify", {
@@ -201,6 +218,8 @@ export default function CheckoutPage() {
             writeCart([]);
             window.location.href = `/order-success/${result.orderId}`;
           } catch (verificationError) {
+            paymentVerified.current = false;
+            paymentOpening.current = false;
             setProcessing(false);
             setError(
               verificationError instanceof Error
@@ -212,6 +231,7 @@ export default function CheckoutPage() {
       });
       razorpay.open();
     } catch (submitError) {
+      paymentOpening.current = false;
       setProcessing(false);
       setError(
         submitError instanceof Error
