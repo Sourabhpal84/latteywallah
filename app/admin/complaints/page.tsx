@@ -10,11 +10,15 @@ import { useToast } from "@/components/toast";
 const statuses = ["OPEN", "ACCEPTED", "VERIFYING", "SOLVED", "UNSOLVED"];
 type Complaint = {
   id: string;
-  customer?: { name?: string; email?: string };
+  customer?: { name?: string; email?: string; phone?: string };
   type?: string;
   description?: string;
   utr?: string;
+  transactionId?: string;
   orderId?: string;
+  orderReference?: string;
+  paymentAmount?: string;
+  paymentDate?: string;
   status?: string;
   adminNote?: string;
   unsolvedReason?: string;
@@ -151,20 +155,31 @@ export default function AdminComplaintsPage() {
                       </p>
                       <h3>{item.customer?.name || "Customer"}</h3>
                       <small>
-                        {item.customer?.email || "—"} · #{item.id.slice(0, 8)}
+                        {item.customer?.email || "—"} ·{" "}
+                        {item.customer?.phone || "No phone"} · #
+                        {item.id.slice(0, 8)}
                       </small>
                     </div>
                     <StatusBadge status={item.status || "OPEN"} />
                   </div>
                   <p>{item.description}</p>
-                  {item.utr && (
+                  {(item.utr || item.transactionId) && (
                     <p>
-                      <b>Payment UTR:</b> {item.utr}
+                      <b>Payment reference:</b> {item.utr || item.transactionId}
                     </p>
                   )}
-                  {item.orderId && (
+                  {item.paymentAmount && (
                     <p>
-                      <b>Order:</b> {item.orderId}
+                      <b>Paid amount:</b> ₹{item.paymentAmount}
+                      {item.paymentDate
+                        ? ` · ${new Date(item.paymentDate).toLocaleString("en-IN")}`
+                        : ""}
+                    </p>
+                  )}
+                  {(item.orderId || item.orderReference) && (
+                    <p>
+                      <b>Order reference:</b>{" "}
+                      {item.orderId || item.orderReference}
                     </p>
                   )}
                   {editing === item.id ? (
