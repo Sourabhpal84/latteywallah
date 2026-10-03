@@ -121,7 +121,7 @@ export default function AdminOrdersPage() {
         </div>
         <div className="admin-header-actions">
           <Link href="/admin" className="button button-outline">
-            CATALOG
+            CATALOGUE
           </Link>
           <Link href="/admin/categories" className="button button-outline">
             CATEGORIES

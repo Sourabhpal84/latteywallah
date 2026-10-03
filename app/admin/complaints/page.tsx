@@ -115,7 +115,7 @@ export default function AdminComplaintsPage() {
             ORDERS
           </Link>
           <Link className="button button-outline" href="/admin">
-            CATALOG
+            CATALOGUE
           </Link>
         </div>
       </header>
