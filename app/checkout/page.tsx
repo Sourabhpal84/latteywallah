@@ -2,34 +2,22 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Minus,
-  Plus,
-  MessageCircle,
-  Trash2,
-} from "lucide-react";
-import {
-  calculateDelivery,
-  defaultDeliverySettings,
-  defaultServiceArea,
-  getBulkOrderUrl,
-  isServiceableLocation,
-  locationForPincode,
-  serviceableLocations,
-  serviceableStates,
-} from "@/lib/commerce";
-import { auth } from "@/lib/firebase";
+import { ArrowLeft, ArrowRight, Minus, Plus, Trash2 } from "lucide-react";
+import { auth, db } from "@/lib/firebase";
 import { CART_UPDATED_EVENT, CartLine, readCart, writeCart } from "@/lib/cart";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
+import { normalizePincode } from "@/lib/commerce";
 
 declare global {
   interface Window {
     Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
   }
 }
+type DeliveryArea = {
+  pincode?: string;
+  deliveryCharge?: number;
+  enabled?: boolean;
+};
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 const loadRazorpay = () =>
   new Promise<boolean>((resolve) => {
@@ -47,12 +35,10 @@ export default function CheckoutPage() {
     name: "",
     phone: "",
     address: "",
-    city: "",
-    state: "",
     pincode: "",
     instructions: "",
   });
-  const [outside, setOutside] = useState(false);
+  const [areas, setAreas] = useState<Record<string, number>>({});
   const [userId, setUserId] = useState("");
   const [userReady, setUserReady] = useState(false);
   const [error, setError] = useState("");
@@ -66,6 +52,26 @@ export default function CheckoutPage() {
     window.addEventListener(CART_UPDATED_EVENT, sync);
     return () => window.removeEventListener(CART_UPDATED_EVENT, sync);
   }, []);
+  useEffect(
+    () =>
+      onSnapshot(collection(db, "serviceAreas"), (snapshot) => {
+        const next: Record<string, number> = {};
+        snapshot.docs.forEach((item) => {
+          const area = item.data() as DeliveryArea;
+          const pincode = normalizePincode(area.pincode || item.id);
+          const charge = Number(area.deliveryCharge);
+          if (
+            area.enabled !== false &&
+            /^\d{6}$/.test(pincode) &&
+            Number.isFinite(charge) &&
+            charge >= 0
+          )
+            next[pincode] = charge;
+        });
+        setAreas(next);
+      }),
+    [],
+  );
   useEffect(() => {
     if (!auth) {
       setUserReady(true);
@@ -85,9 +91,7 @@ export default function CheckoutPage() {
             name: String(saved.name || ""),
             phone: String(saved.phone || ""),
             address: String(saved.address || ""),
-            city: String(saved.city || ""),
-            state: String(saved.state || ""),
-            pincode: String(saved.pincode || ""),
+            pincode: normalizePincode(String(saved.pincode || "")),
             instructions: String(saved.instructions || ""),
           });
       }
@@ -109,52 +113,22 @@ export default function CheckoutPage() {
     () => lines.reduce((total, line) => total + line.price * line.quantity, 0),
     [lines],
   );
-  const settings =
-    typeof window !== "undefined"
-      ? JSON.parse(
-          localStorage.getItem("lattey-wala-delivery-settings") ||
-            JSON.stringify(defaultDeliverySettings),
-        )
-      : defaultDeliverySettings;
-  const serviceArea =
-    typeof window !== "undefined"
-      ? JSON.parse(
-          localStorage.getItem("lattey-wala-service-area") ||
-            JSON.stringify(defaultServiceArea),
-        )
-      : defaultServiceArea;
-  const delivery = calculateDelivery(subtotal, settings);
-  const total = subtotal + delivery;
-  const changePincode = (value: string) => {
-    const pincode = value.replace(/\D/g, "").slice(0, 6);
-    const detected =
-      pincode.length === 6 ? locationForPincode(pincode) : undefined;
-    setForm((current) => ({
-      ...current,
-      pincode,
-      ...(detected ? { state: detected.state } : {}),
-    }));
-  };
+  const pincodeValid = /^\d{6}$/.test(form.pincode);
+  const delivery = pincodeValid ? areas[form.pincode] : undefined;
+  const total = subtotal + (delivery ?? 0);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (paymentOpening.current) return;
     setError("");
-    if (!navigator.onLine) {
-      setError("You’re offline. Reconnect before opening payment.");
-      return;
-    }
-    if (!lines.length) {
-      setError("Your cart is empty.");
-      return;
-    }
+    if (!navigator.onLine)
+      return setError("You’re offline. Reconnect before opening payment.");
+    if (!lines.length) return setError("Your cart is empty.");
     if (!userReady || !userId || !auth?.currentUser) {
       window.location.href = "/account/login";
       return;
     }
-    if (!isServiceableLocation(form.city, form.pincode, serviceArea)) {
-      setOutside(true);
-      return;
-    }
+    if (delivery === undefined)
+      return setError("Delivery is currently unavailable at this pincode.");
     paymentOpening.current = true;
     setProcessing(true);
     try {
@@ -240,17 +214,6 @@ export default function CheckoutPage() {
       );
     }
   };
-  const bulkUrl = getBulkOrderUrl(
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919999999999",
-    {
-      name: form.name,
-      phone: form.phone,
-      location: `${form.city}, ${form.state}, ${form.pincode}`,
-      requirement:
-        form.instructions ||
-        "Please share available products and delivery options.",
-    },
-  );
   if (!lines.length)
     return (
       <main className="checkout-page">
@@ -320,52 +283,12 @@ export default function CheckoutPage() {
               Full address *
               <textarea
                 required
+                placeholder="Order will be delivered to this address. Please enter complete and correct address details."
                 value={form.address}
                 onChange={(event) =>
                   setForm({ ...form, address: event.target.value })
                 }
               />
-            </label>
-            <label>
-              City *
-              <select
-                required
-                value={form.city}
-                onChange={(event) => {
-                  const city = serviceableLocations.find(
-                    (location) => location.city === event.target.value,
-                  );
-                  setForm({
-                    ...form,
-                    city: event.target.value,
-                    state: city?.state || "",
-                  });
-                }}
-              >
-                <option value="">Select city</option>
-                {serviceableLocations.map((location) => (
-                  <option key={location.city} value={location.city}>
-                    {location.city}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              State *
-              <select
-                required
-                value={form.state}
-                onChange={(event) =>
-                  setForm({ ...form, state: event.target.value })
-                }
-              >
-                <option value="">Select state</option>
-                {serviceableStates.map((state) => (
-                  <option key={state} value={state}>
-                    {state}
-                  </option>
-                ))}
-              </select>
             </label>
             <label>
               Pincode *
@@ -376,11 +299,21 @@ export default function CheckoutPage() {
                 pattern="[0-9]{6}"
                 maxLength={6}
                 value={form.pincode}
-                onChange={(event) => changePincode(event.target.value)}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    pincode: normalizePincode(event.target.value),
+                  })
+                }
               />
-              <small className="field-help">
-                Enter your 6-digit pincode. Serviceability is checked
-                automatically.
+              <small
+                className={`field-help ${pincodeValid ? (delivery === undefined ? "pincode-unavailable" : "pincode-available") : ""}`}
+              >
+                {pincodeValid
+                  ? delivery === undefined
+                    ? "Delivery is currently unavailable at this pincode."
+                    : `Delivery available · ${money(delivery)} delivery charge`
+                  : "Enter your 6-digit pincode to check delivery availability."}
               </small>
             </label>
             <label className="wide">
@@ -396,16 +329,17 @@ export default function CheckoutPage() {
             {error && <p className="checkout-error wide">{error}</p>}
             <button
               className="button button-dark wide checkout-button"
-              disabled={processing}
+              disabled={processing || delivery === undefined}
               type="submit"
             >
-              {processing ? "OPENING PAYMENT…" : "PAY WITH RAZORPAY"}{" "}
+              {processing
+                ? "OPENING PAYMENT…"
+                : delivery === undefined
+                  ? "ENTER SERVICEABLE PINCODE"
+                  : "PAY WITH RAZORPAY"}{" "}
               <ArrowRight size={16} />
             </button>
           </form>
-          <p className="bulk-link" onClick={() => setOutside(true)}>
-            Bulk order / outside NCR? <span>WhatsApp us →</span>
-          </p>
         </section>
         <aside className="summary">
           <p className="eyebrow">ORDER SUMMARY</p>
@@ -453,7 +387,7 @@ export default function CheckoutPage() {
             </p>
             <p>
               <span>Delivery fee</span>
-              <b>{delivery ? money(delivery) : "FREE"}</b>
+              <b>{delivery === undefined ? "—" : money(delivery)}</b>
             </p>
             <p className="grand">
               <span>Total</span>
@@ -461,31 +395,10 @@ export default function CheckoutPage() {
             </p>
           </div>
           <small>
-            Free delivery on orders above{" "}
-            {money(settings.freeDeliveryThreshold)}.
+            Delivery charge is set automatically for your exact pincode.
           </small>
         </aside>
       </div>
-      {outside && (
-        <div className="modal-backdrop">
-          <div className="service-modal">
-            <button className="modal-close" onClick={() => setOutside(false)}>
-              ×
-            </button>
-            <p className="eyebrow">DELIVERY AREA</p>
-            <h2>Sorry, we currently deliver only within Delhi NCR.</h2>
-            <p>Need a bulk order or delivery outside our service area?</p>
-            <a
-              className="button whatsapp full"
-              href={bulkUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <MessageCircle size={17} /> BULK ORDER / CONTACT US
-            </a>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

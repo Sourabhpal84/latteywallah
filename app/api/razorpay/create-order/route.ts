@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, requireUser } from "@/lib/firebase-admin";
-import {
-  calculateDelivery,
-  defaultDeliverySettings,
-  isServiceableLocation,
-} from "@/lib/commerce";
+import { isValidPincode, normalizePincode } from "@/lib/commerce";
 
 export const runtime = "nodejs";
 type ClientItem = {
@@ -19,8 +15,6 @@ type Address = {
   name?: string;
   phone?: string;
   address?: string;
-  city?: string;
-  state?: string;
   pincode?: string;
   instructions?: string;
 };
@@ -64,17 +58,16 @@ export async function POST(request: Request) {
       !address.name ||
       !address.phone ||
       !address.address ||
-      !address.city ||
-      !address.state ||
       !address.pincode
     )
       return NextResponse.json(
         { error: "Complete delivery details are required" },
         { status: 400 },
       );
-    if (!isServiceableLocation(address.city, address.pincode))
+    const pincode = normalizePincode(address.pincode);
+    if (!isValidPincode(pincode))
       return NextResponse.json(
-        { error: "This delivery location is outside the service area" },
+        { error: "Enter a valid 6-digit pincode." },
         { status: 400 },
       );
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET)
@@ -152,20 +145,25 @@ export async function POST(request: Request) {
         total: unitPrice * quantity,
       });
     }
+    const areaSnapshot = await adminDb
+      .collection("serviceAreas")
+      .doc(pincode)
+      .get();
+    const deliveryCharge = Number(areaSnapshot.data()?.deliveryCharge);
+    if (
+      !areaSnapshot.exists ||
+      areaSnapshot.data()?.enabled === false ||
+      !Number.isFinite(deliveryCharge) ||
+      deliveryCharge < 0
+    )
+      return NextResponse.json(
+        { error: "Delivery is currently unavailable at this pincode." },
+        { status: 400 },
+      );
     const subtotal = verifiedItems.reduce(
       (total, item) => total + item.total,
       0,
     );
-    const settings = {
-      freeDeliveryThreshold: Number(
-        process.env.FREE_DELIVERY_THRESHOLD ||
-          defaultDeliverySettings.freeDeliveryThreshold,
-      ),
-      deliveryCharge: Number(
-        process.env.DELIVERY_CHARGE || defaultDeliverySettings.deliveryCharge,
-      ),
-    };
-    const deliveryCharge = calculateDelivery(subtotal, settings);
     const totalAmount = subtotal + deliveryCharge;
     const attemptRef = adminDb
       .collection("checkoutAttempts")
@@ -180,13 +178,17 @@ export async function POST(request: Request) {
             amount?: number;
             currency?: string;
             internalOrderId?: string;
+            pincode?: string;
+            deliveryCharge?: number;
             updatedAt?: string;
           }
         | undefined;
       if (
         previous?.status === "READY" &&
         previous.razorpayOrderId &&
-        previous.internalOrderId
+        previous.internalOrderId &&
+        previous.pincode === pincode &&
+        previous.deliveryCharge === deliveryCharge
       )
         return previous;
       if (
@@ -201,6 +203,8 @@ export async function POST(request: Request) {
         {
           customerId: user.uid,
           status: "CREATING",
+          pincode,
+          deliveryCharge,
           updatedAt: now,
           createdAt: previous?.updatedAt || now,
         },
@@ -264,7 +268,13 @@ export async function POST(request: Request) {
           phone: address.phone,
           email: user.email || "",
         },
-        deliveryAddress: address,
+        deliveryAddress: {
+          name: address.name,
+          phone: address.phone,
+          address: address.address,
+          pincode,
+          instructions: address.instructions || "",
+        },
         items: verifiedItems,
         subtotal,
         discount: 0,
@@ -290,7 +300,13 @@ export async function POST(request: Request) {
             phone: address.phone,
             email: user.email || "",
           },
-          deliveryAddress: address,
+          deliveryAddress: {
+            name: address.name,
+            phone: address.phone,
+            address: address.address,
+            pincode,
+            instructions: address.instructions || "",
+          },
           items: verifiedItems,
           subtotal,
           deliveryCharge,
@@ -309,6 +325,8 @@ export async function POST(request: Request) {
           internalOrderId: orderRef.id,
           amount: razorpayOrder.amount,
           currency: razorpayOrder.currency,
+          pincode,
+          deliveryCharge,
           updatedAt: createdAt,
         },
         { merge: true },

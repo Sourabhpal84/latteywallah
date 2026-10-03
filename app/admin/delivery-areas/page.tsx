@@ -1,0 +1,230 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  setDoc,
+} from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { normalizePincode } from "@/lib/commerce";
+import { useToast } from "@/components/toast";
+
+type Area = { id: string; pincode: string; deliveryCharge: number };
+export default function DeliveryAreasPage() {
+  const { notify } = useToast();
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [form, setForm] = useState({ pincode: "", deliveryCharge: "" });
+  const [editing, setEditing] = useState("");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (!auth) return;
+    let stop: (() => void) | undefined;
+    return auth.onAuthStateChanged((user) => {
+      stop?.();
+      if (!user) {
+        window.location.href = "/admin/login";
+        return;
+      }
+      stop = onSnapshot(
+        collection(db, "serviceAreas"),
+        (snapshot) =>
+          setAreas(
+            snapshot.docs
+              .map((item) => ({
+                id: item.id,
+                ...(item.data() as Omit<Area, "id">),
+              }))
+              .sort((a, b) => a.pincode.localeCompare(b.pincode)),
+          ),
+        () => notify({ kind: "error", title: "Unable to load delivery areas" }),
+      );
+    });
+  }, [notify]);
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (saving) return;
+    const pincode = normalizePincode(form.pincode);
+    const deliveryCharge = Number(form.deliveryCharge);
+    if (!/^\d{6}$/.test(pincode))
+      return notify({ kind: "error", title: "Enter a valid 6-digit pincode" });
+    if (!Number.isFinite(deliveryCharge) || deliveryCharge < 0)
+      return notify({ kind: "error", title: "Enter a valid delivery charge" });
+    setSaving(true);
+    try {
+      await setDoc(
+        doc(db, "serviceAreas", pincode),
+        {
+          pincode,
+          deliveryCharge,
+          enabled: true,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+      setForm({ pincode: "", deliveryCharge: "" });
+      setEditing("");
+      notify({
+        kind: "success",
+        title: editing ? "Delivery charge updated" : "Pincode added",
+        message: `${pincode} is now serviceable.`,
+      });
+    } catch {
+      notify({ kind: "error", title: "Unable to save pincode" });
+    } finally {
+      setSaving(false);
+    }
+  };
+  const edit = (area: Area) => {
+    setEditing(area.id);
+    setForm({
+      pincode: area.pincode,
+      deliveryCharge: String(area.deliveryCharge),
+    });
+  };
+  const remove = async (area: Area) => {
+    if (
+      !confirm(
+        `Delete ${area.pincode}? Delivery will stop immediately for this pincode.`,
+      )
+    )
+      return;
+    try {
+      await deleteDoc(doc(db, "serviceAreas", area.id));
+      notify({
+        kind: "success",
+        title: "Pincode removed",
+        message: `${area.pincode} is no longer serviceable.`,
+      });
+    } catch {
+      notify({ kind: "error", title: "Unable to delete pincode" });
+    }
+  };
+  return (
+    <main className="admin-page">
+      <header className="admin-header">
+        <Link href="/admin" className="back-link">
+          <ArrowLeft size={16} /> ADMIN
+        </Link>
+        <div className="logo">
+          LATTEY <span>WALA</span>
+        </div>
+        <Link className="button button-outline" href="/admin/orders">
+          ORDERS
+        </Link>
+      </header>
+      <section className="admin-content delivery-areas-page">
+        <div className="admin-intro">
+          <div>
+            <p className="eyebrow">DELIVERY AREAS</p>
+            <h1>Pincode management</h1>
+            <p>
+              Only pincodes listed here are serviceable. Each one has its own
+              exact delivery charge.
+            </p>
+          </div>
+          <span className="admin-status">● LIVE</span>
+        </div>
+        <div className="delivery-area-layout">
+          <form className="delivery-area-form" onSubmit={save}>
+            <p className="eyebrow">
+              {editing ? "EDIT PINCODE" : "ADD PINCODE"}
+            </p>
+            <label>
+              Pincode
+              <input
+                required
+                inputMode="numeric"
+                maxLength={6}
+                disabled={Boolean(editing)}
+                value={form.pincode}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    pincode: normalizePincode(event.target.value),
+                  })
+                }
+                placeholder="6-digit pincode"
+              />
+            </label>
+            <label>
+              Delivery charge (₹)
+              <input
+                required
+                min="0"
+                type="number"
+                value={form.deliveryCharge}
+                onChange={(event) =>
+                  setForm({ ...form, deliveryCharge: event.target.value })
+                }
+                placeholder="Example: 49"
+              />
+            </label>
+            <button className="button button-dark" disabled={saving}>
+              {editing ? "SAVE CHARGE" : "ADD PINCODE"} <Plus size={15} />
+            </button>
+            {editing && (
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => {
+                  setEditing("");
+                  setForm({ pincode: "", deliveryCharge: "" });
+                }}
+              >
+                CANCEL
+              </button>
+            )}
+          </form>
+          <aside className="delivery-area-note">
+            <b>How it works</b>
+            <p>
+              Customer pincode is checked live against this list. The server
+              recalculates the exact delivery charge before payment starts.
+            </p>
+            <p>Deleting a pincode makes it unavailable immediately.</p>
+          </aside>
+        </div>
+        <div className="delivery-areas-list">
+          <div className="delivery-areas-head">
+            <span>PINCODE</span>
+            <span>DELIVERY CHARGE</span>
+            <span>ACTIONS</span>
+          </div>
+          {areas.length ? (
+            areas.map((area) => (
+              <article key={area.id}>
+                <b>{area.pincode}</b>
+                <strong>
+                  ₹{Number(area.deliveryCharge || 0).toLocaleString("en-IN")}
+                </strong>
+                <div>
+                  <button
+                    aria-label={`Edit ${area.pincode}`}
+                    onClick={() => edit(area)}
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    aria-label={`Delete ${area.pincode}`}
+                    onClick={() => remove(area)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </article>
+            ))
+          ) : (
+            <div className="orders-state">
+              No serviceable pincodes yet. Add one above to begin.
+            </div>
+          )}
+        </div>
+      </section>
+    </main>
+  );
+}

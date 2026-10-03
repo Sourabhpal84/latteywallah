@@ -246,6 +246,7 @@ export default function AdminPage() {
           <Link href="/admin/categories">Category Manager</Link>
           <Link href="/admin/orders">Orders</Link>
           <Link href="/admin/complaints">Complaints & Refunds</Link>
+          <Link href="/admin/delivery-areas">Delivery Areas</Link>
         </aside>
         <div className="admin-content">
           <div className="admin-intro">
