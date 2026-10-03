@@ -61,10 +61,51 @@
 .delivery-areas-head,
 .delivery-areas-list article {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr 1fr auto;
   gap: 12px;
   align-items: center;
   padding: 15px 20px;
+}
+.tax-rate-form {
+  display: grid;
+  grid-template-columns: 1fr minmax(180px, 0.45fr) auto;
+  gap: 20px;
+  align-items: end;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 22px;
+  margin: 28px 0;
+}
+.tax-rate-form h2 {
+  font-size: 21px;
+  margin: 7px 0;
+}
+.tax-rate-form p:not(.eyebrow) {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #666;
+  margin: 0;
+}
+.tax-rate-form label {
+  font: 10px "DM Mono";
+  letter-spacing: 0.08em;
+}
+.tax-rate-form input {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  padding: 13px;
+  margin-top: 8px;
+  font: 13px Manrope;
+}
+@media (max-width: 800px) {
+  .tax-rate-form {
+    grid-template-columns: 1fr;
+  }
+  .tax-rate-form .button {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 .delivery-areas-head {
   background: #ebeae6;

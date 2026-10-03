@@ -21,22 +21,41 @@ export async function POST(request: Request) {
       .collection("serviceAreas")
       .doc(pincode)
       .get();
-    const deliveryCharge = Number(area.data()?.deliveryCharge);
+    const configuredDeliveryCharge = Number(area.data()?.deliveryCharge);
+    const freeDeliveryAbove = Number(area.data()?.freeDeliveryAbove);
     if (
       !area.exists ||
       area.data()?.enabled === false ||
-      !Number.isFinite(deliveryCharge) ||
-      deliveryCharge < 0
+      !Number.isFinite(configuredDeliveryCharge) ||
+      configuredDeliveryCharge < 0
     )
       return NextResponse.json(
         { error: "Delivery is currently unavailable at this pincode." },
         { status: 400 },
       );
+    const deliveryCharge =
+      Number.isFinite(freeDeliveryAbove) &&
+      freeDeliveryAbove > 0 &&
+      subtotal >= freeDeliveryAbove
+        ? 0
+        : configuredDeliveryCharge;
+    const configuredTaxRate = Number(
+      (await getAdminDb().collection("settings").doc("tax").get()).data()?.rate,
+    );
+    const taxRate =
+      Number.isFinite(configuredTaxRate) &&
+      configuredTaxRate >= 0 &&
+      configuredTaxRate <= 100
+        ? configuredTaxRate
+        : 0;
+    const taxAmount = Math.round(subtotal * taxRate) / 100;
     return NextResponse.json({
       subtotal,
       pincode,
       delivery: deliveryCharge,
-      total: subtotal + deliveryCharge,
+      taxRate,
+      taxAmount,
+      total: subtotal + deliveryCharge + taxAmount,
     });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });

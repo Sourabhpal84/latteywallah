@@ -149,12 +149,15 @@ export async function POST(request: Request) {
       .collection("serviceAreas")
       .doc(pincode)
       .get();
-    const deliveryCharge = Number(areaSnapshot.data()?.deliveryCharge);
+    const configuredDeliveryCharge = Number(
+      areaSnapshot.data()?.deliveryCharge,
+    );
+    const freeDeliveryAbove = Number(areaSnapshot.data()?.freeDeliveryAbove);
     if (
       !areaSnapshot.exists ||
       areaSnapshot.data()?.enabled === false ||
-      !Number.isFinite(deliveryCharge) ||
-      deliveryCharge < 0
+      !Number.isFinite(configuredDeliveryCharge) ||
+      configuredDeliveryCharge < 0
     )
       return NextResponse.json(
         { error: "Delivery is currently unavailable at this pincode." },
@@ -164,7 +167,23 @@ export async function POST(request: Request) {
       (total, item) => total + item.total,
       0,
     );
-    const totalAmount = subtotal + deliveryCharge;
+    const deliveryCharge =
+      Number.isFinite(freeDeliveryAbove) &&
+      freeDeliveryAbove > 0 &&
+      subtotal >= freeDeliveryAbove
+        ? 0
+        : configuredDeliveryCharge;
+    const configuredTaxRate = Number(
+      (await adminDb.collection("settings").doc("tax").get()).data()?.rate,
+    );
+    const taxRate =
+      Number.isFinite(configuredTaxRate) &&
+      configuredTaxRate >= 0 &&
+      configuredTaxRate <= 100
+        ? configuredTaxRate
+        : 0;
+    const taxAmount = Math.round(subtotal * taxRate) / 100;
+    const totalAmount = subtotal + deliveryCharge + taxAmount;
     const attemptRef = adminDb
       .collection("checkoutAttempts")
       .doc(`${user.uid}_${checkoutKey}`);
@@ -180,6 +199,8 @@ export async function POST(request: Request) {
             internalOrderId?: string;
             pincode?: string;
             deliveryCharge?: number;
+            taxRate?: number;
+            taxAmount?: number;
             updatedAt?: string;
           }
         | undefined;
@@ -188,7 +209,9 @@ export async function POST(request: Request) {
         previous.razorpayOrderId &&
         previous.internalOrderId &&
         previous.pincode === pincode &&
-        previous.deliveryCharge === deliveryCharge
+        previous.deliveryCharge === deliveryCharge &&
+        previous.taxRate === taxRate &&
+        previous.taxAmount === taxAmount
       )
         return previous;
       if (
@@ -205,6 +228,8 @@ export async function POST(request: Request) {
           status: "CREATING",
           pincode,
           deliveryCharge,
+          taxRate,
+          taxAmount,
           updatedAt: now,
           createdAt: previous?.updatedAt || now,
         },
@@ -279,6 +304,8 @@ export async function POST(request: Request) {
         subtotal,
         discount: 0,
         deliveryCharge,
+        taxRate,
+        taxAmount,
         totalAmount,
         paymentMethod: "RAZORPAY",
         paymentStatus: "PENDING",
@@ -310,6 +337,8 @@ export async function POST(request: Request) {
           items: verifiedItems,
           subtotal,
           deliveryCharge,
+          taxRate,
+          taxAmount,
           totalAmount,
           amountPaise: razorpayOrder.amount,
           status: "PENDING",
@@ -327,6 +356,8 @@ export async function POST(request: Request) {
           currency: razorpayOrder.currency,
           pincode,
           deliveryCharge,
+          taxRate,
+          taxAmount,
           updatedAt: createdAt,
         },
         { merge: true },

@@ -16,6 +16,7 @@ declare global {
 type DeliveryArea = {
   pincode?: string;
   deliveryCharge?: number;
+  freeDeliveryAbove?: number | null;
   enabled?: boolean;
 };
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
@@ -38,9 +39,15 @@ export default function CheckoutPage() {
     pincode: "",
     instructions: "",
   });
-  const [areas, setAreas] = useState<Record<string, number>>({});
+  const [areas, setAreas] = useState<
+    Record<
+      string,
+      { deliveryCharge: number; freeDeliveryAbove?: number | null }
+    >
+  >({});
   const [userId, setUserId] = useState("");
   const [userReady, setUserReady] = useState(false);
+  const [taxRate, setTaxRate] = useState(0);
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
   const checkoutKey = useRef(crypto.randomUUID());
@@ -54,8 +61,21 @@ export default function CheckoutPage() {
   }, []);
   useEffect(
     () =>
+      onSnapshot(doc(db, "settings", "tax"), (snapshot) => {
+        const rate = Number(snapshot.data()?.rate);
+        setTaxRate(
+          Number.isFinite(rate) && rate >= 0 && rate <= 100 ? rate : 0,
+        );
+      }),
+    [],
+  );
+  useEffect(
+    () =>
       onSnapshot(collection(db, "serviceAreas"), (snapshot) => {
-        const next: Record<string, number> = {};
+        const next: Record<
+          string,
+          { deliveryCharge: number; freeDeliveryAbove?: number | null }
+        > = {};
         snapshot.docs.forEach((item) => {
           const area = item.data() as DeliveryArea;
           const pincode = normalizePincode(area.pincode || item.id);
@@ -66,7 +86,14 @@ export default function CheckoutPage() {
             Number.isFinite(charge) &&
             charge >= 0
           )
-            next[pincode] = charge;
+            next[pincode] = {
+              deliveryCharge: charge,
+              freeDeliveryAbove:
+                Number.isFinite(Number(area.freeDeliveryAbove)) &&
+                Number(area.freeDeliveryAbove) > 0
+                  ? Number(area.freeDeliveryAbove)
+                  : null,
+            };
         });
         setAreas(next);
       }),
@@ -114,8 +141,15 @@ export default function CheckoutPage() {
     [lines],
   );
   const pincodeValid = /^\d{6}$/.test(form.pincode);
-  const delivery = pincodeValid ? areas[form.pincode] : undefined;
-  const total = subtotal + (delivery ?? 0);
+  const selectedArea = pincodeValid ? areas[form.pincode] : undefined;
+  const delivery = selectedArea
+    ? selectedArea.freeDeliveryAbove &&
+      subtotal >= selectedArea.freeDeliveryAbove
+      ? 0
+      : selectedArea.deliveryCharge
+    : undefined;
+  const taxAmount = Math.round(subtotal * taxRate) / 100;
+  const total = subtotal + (delivery ?? 0) + taxAmount;
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (paymentOpening.current) return;
@@ -312,7 +346,9 @@ export default function CheckoutPage() {
                 {pincodeValid
                   ? delivery === undefined
                     ? "Delivery is currently unavailable at this pincode."
-                    : `Delivery available · ${money(delivery)} delivery charge`
+                    : delivery === 0 && selectedArea?.freeDeliveryAbove
+                      ? `Delivery available · FREE on orders above ${money(selectedArea.freeDeliveryAbove)}`
+                      : `Delivery available · ${money(delivery)} delivery charge${selectedArea?.freeDeliveryAbove ? ` · FREE above ${money(selectedArea.freeDeliveryAbove)}` : ""}`
                   : "Enter your 6-digit pincode to check delivery availability."}
               </small>
             </label>
@@ -387,7 +423,17 @@ export default function CheckoutPage() {
             </p>
             <p>
               <span>Delivery fee</span>
-              <b>{delivery === undefined ? "—" : money(delivery)}</b>
+              <b>
+                {delivery === undefined
+                  ? "—"
+                  : delivery === 0
+                    ? "FREE"
+                    : money(delivery)}
+              </b>
+            </p>
+            <p>
+              <span>Tax {taxRate ? `(${taxRate}%)` : ""}</span>
+              <b>{money(taxAmount)}</b>
             </p>
             <p className="grand">
               <span>Total</span>
