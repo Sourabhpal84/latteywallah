@@ -87,7 +87,9 @@ export default function AdminPage() {
   const addSubcategory = async (parent: CategoryNode) => {
     const name = prompt(`Subcategory inside ${parent.name}`);
     if (!name?.trim()) return;
-    const image = prompt("Subcategory image URL (required for the visual card)");
+    const image = prompt(
+      "Subcategory image URL (required for the visual card)",
+    );
     if (!image?.trim()) return;
     try {
       const node = await addCategory({
@@ -173,7 +175,8 @@ export default function AdminPage() {
           id: `${Date.now()}-${color}-${size}`,
           color,
           size,
-          price: Number.isFinite(sizePrice) && sizePrice >= 0 ? sizePrice : price,
+          price:
+            Number.isFinite(sizePrice) && sizePrice >= 0 ? sizePrice : price,
           stock: 10,
           sku: `${slugify(form.name).slice(0, 8)}-${color.slice(0, 2)}-${size}`,
         })),
@@ -241,6 +244,8 @@ export default function AdminPage() {
           </a>
           <a href="#categories">Categories</a>
           <Link href="/admin/categories">Category Manager</Link>
+          <Link href="/admin/orders">Orders</Link>
+          <Link href="/admin/complaints">Complaints & Refunds</Link>
         </aside>
         <div className="admin-content">
           <div className="admin-intro">
@@ -377,7 +382,9 @@ export default function AdminPage() {
                   }
                   placeholder="S:499, M:549, L:599, XL:649, XXL:699"
                 />
-                <small className="field-help">Use Size:Price. Remove a size to disable it.</small>
+                <small className="field-help">
+                  Use Size:Price. Remove a size to disable it.
+                </small>
               </label>
               <label>
                 Material
