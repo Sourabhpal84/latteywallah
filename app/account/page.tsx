@@ -61,7 +61,6 @@ export default function AccountPage() {
                 id: item.id,
                 ...(item.data() as Omit<Order, "id">),
               }))
-              .filter((item) => item.paymentStatus === "PAID")
               .sort((a, b) => b.id.localeCompare(a.id)),
           ),
       );

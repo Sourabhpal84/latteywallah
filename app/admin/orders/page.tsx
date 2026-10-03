@@ -68,7 +68,7 @@ export default function AdminOrdersPage() {
   );
   const visible = useMemo(
     () =>
-      paidOrders.filter((order) => {
+      orders.filter((order) => {
         const term = search.trim().toLowerCase();
         const searchable = [
           order.displayOrderId,

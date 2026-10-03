@@ -20,6 +20,22 @@ type DeliveryArea = {
   enabled?: boolean;
 };
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
+const PENDING_PAYMENT_KEY = "lattey-wala-pending-payment";
+type PendingPayment = { razorpayOrderId: string; internalOrderId?: string };
+
+async function recoverPendingPayment(token: string, razorpayOrderId: string) {
+  const response = await fetch("/api/razorpay/reconcile", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ razorpay_order_id: razorpayOrderId }),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Unable to verify payment");
+  return result as { resolved?: boolean; orderId?: string };
+}
 const loadRazorpay = () =>
   new Promise<boolean>((resolve) => {
     if (window.Razorpay) return resolve(true);
@@ -59,6 +75,35 @@ export default function CheckoutPage() {
     window.addEventListener(CART_UPDATED_EVENT, sync);
     return () => window.removeEventListener(CART_UPDATED_EVENT, sync);
   }, []);
+  useEffect(() => {
+    if (!userReady || !userId || !auth?.currentUser) return;
+    let cancelled = false;
+    const raw = window.localStorage.getItem(PENDING_PAYMENT_KEY);
+    if (!raw) return;
+    let pending: PendingPayment | null = null;
+    try {
+      pending = JSON.parse(raw) as PendingPayment;
+    } catch {
+      window.localStorage.removeItem(PENDING_PAYMENT_KEY);
+      return;
+    }
+    if (!pending?.razorpayOrderId) return;
+    void (async () => {
+      try {
+        const token = await auth.currentUser!.getIdToken();
+        const recovered = await recoverPendingPayment(token, pending!.razorpayOrderId);
+        if (cancelled || !recovered.resolved || !recovered.orderId) return;
+        window.localStorage.removeItem(PENDING_PAYMENT_KEY);
+        writeCart([]);
+        window.location.replace(`/order-success/${recovered.orderId}`);
+      } catch {
+        // The checkout remains usable. The order is also shown as pending in My Orders.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, userReady]);
   useEffect(
     () =>
       onSnapshot(doc(db, "settings", "tax"), (snapshot) => {
@@ -182,6 +227,13 @@ export default function CheckoutPage() {
       const created = await createResponse.json();
       if (!createResponse.ok)
         throw new Error(created.error || "Unable to start payment");
+      window.localStorage.setItem(
+        PENDING_PAYMENT_KEY,
+        JSON.stringify({
+          razorpayOrderId: created.orderId,
+          internalOrderId: created.internalOrderId,
+        } satisfies PendingPayment),
+      );
       if (!(await loadRazorpay()) || !window.Razorpay)
         throw new Error("Payment window could not be loaded");
       const razorpay = new window.Razorpay({
@@ -223,9 +275,25 @@ export default function CheckoutPage() {
             const result = await verification.json();
             if (!verification.ok || !result.verified)
               throw new Error(result.error || "Payment verification failed");
+            window.localStorage.removeItem(PENDING_PAYMENT_KEY);
             writeCart([]);
             window.location.href = `/order-success/${result.orderId}`;
           } catch (verificationError) {
+            try {
+              const token = await auth.currentUser!.getIdToken();
+              const recovered = await recoverPendingPayment(
+                token,
+                response.razorpay_order_id,
+              );
+              if (recovered.resolved && recovered.orderId) {
+                window.localStorage.removeItem(PENDING_PAYMENT_KEY);
+                writeCart([]);
+                window.location.href = `/order-success/${recovered.orderId}`;
+                return;
+              }
+            } catch {
+              // Keep the payment reference locally; it will be retried on return.
+            }
             paymentVerified.current = false;
             paymentOpening.current = false;
             setProcessing(false);

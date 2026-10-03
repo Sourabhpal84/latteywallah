@@ -13,6 +13,7 @@ type Order = {
   totalAmount?: number;
   orderStatus?: string;
   paymentStatus?: string;
+  razorpayOrderId?: string;
   createdAt?: string;
   items?: Array<{ name?: string; image?: string; quantity?: number }>;
 };
@@ -21,6 +22,32 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [signedOut, setSignedOut] = useState(false);
   const [error, setError] = useState("");
+  const [checkingId, setCheckingId] = useState("");
+  const checkPayment = async (order: Order) => {
+    if (!auth?.currentUser || !order.razorpayOrderId) return;
+    setCheckingId(order.id);
+    setError("");
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch("/api/razorpay/reconcile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ razorpay_order_id: order.razorpayOrderId }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to check payment");
+      if (result.resolved && result.orderId)
+        window.location.href = `/order-success/${result.orderId}`;
+      else setError("Payment is still being confirmed. Please try again shortly.");
+    } catch (checkError) {
+      setError(checkError instanceof Error ? checkError.message : "Unable to check payment");
+    } finally {
+      setCheckingId("");
+    }
+  };
   useEffect(() => {
     if (!auth) {
       setSignedOut(true);
@@ -45,7 +72,6 @@ export default function OrdersPage() {
                 id: item.id,
                 ...(item.data() as Omit<Order, "id">),
               }))
-              .filter((order) => order.paymentStatus === "PAID")
               .sort((a, b) =>
                 String(b.createdAt).localeCompare(String(a.createdAt)),
               ),
@@ -94,6 +120,12 @@ export default function OrdersPage() {
             {orders.length === 1 ? "" : "s"}
           </span>
         </div>
+        {orders.some((order) => order.paymentStatus === "PENDING") && (
+          <p className="admin-notice">
+            A payment is being verified. Your order will confirm automatically
+            once Razorpay confirms it.
+          </p>
+        )}
         {loading ? (
           <div className="customer-orders-loading">
             <span />
@@ -105,9 +137,8 @@ export default function OrdersPage() {
         ) : orders.length ? (
           <div className="customer-orders-list">
             {orders.map((order) => (
-              <Link
+              <article
                 className="customer-order-row"
-                href={`/orders/${order.id}`}
                 key={order.id}
               >
                 <img src={order.items?.[0]?.image || ""} alt="" />
@@ -129,11 +160,23 @@ export default function OrdersPage() {
                 </div>
                 <div className="customer-order-total">
                   <b>{money(order.totalAmount)}</b>
-                  <span>
-                    TRACK <ArrowRight size={15} />
-                  </span>
+                  {order.paymentStatus === "PENDING" ? (
+                    <button
+                      className="order-view"
+                      disabled={!order.razorpayOrderId || checkingId === order.id}
+                      onClick={() => checkPayment(order)}
+                    >
+                      {checkingId === order.id ? "CHECKING…" : "CHECK PAYMENT"}
+                    </button>
+                  ) : (
+                    <Link href={`/orders/${order.id}`}>
+                      <span>
+                        TRACK <ArrowRight size={15} />
+                      </span>
+                    </Link>
+                  )}
                 </div>
-              </Link>
+              </article>
             ))}
           </div>
         ) : (

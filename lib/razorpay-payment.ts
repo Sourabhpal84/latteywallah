@@ -32,6 +32,42 @@ export async function getRazorpayPayment(paymentId: string) {
   return payment;
 }
 
+/**
+ * A browser callback is helpful, but it is not a source of truth: customers can
+ * close the page or lose their connection after paying.  This asks Razorpay for
+ * the payment recorded against our Razorpay order so a signed-in customer can
+ * safely recover a pending order later.
+ */
+export async function getPaidPaymentForRazorpayOrder(
+  razorpayOrderId: string,
+  expectedAmount?: number,
+) {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !secret)
+    throw new Error("Razorpay is not configured on the server");
+  const response = await fetch(
+    `https://api.razorpay.com/v1/orders/${encodeURIComponent(razorpayOrderId)}/payments`,
+    {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${keyId}:${secret}`).toString("base64")}`,
+      },
+      cache: "no-store",
+    },
+  );
+  const payload = (await response.json()) as {
+    items?: Array<{ id?: string; order_id?: string; status?: string; amount?: number }>;
+  };
+  if (!response.ok) throw new Error("Unable to check payment with Razorpay");
+  return (payload.items || []).find(
+    (payment) =>
+      payment.id &&
+      payment.order_id === razorpayOrderId &&
+      ["authorized", "captured"].includes(payment.status || "") &&
+      (expectedAmount === undefined || payment.amount === expectedAmount),
+  );
+}
+
 export async function confirmRazorpayPayment(
   razorpayOrderId: string,
   razorpayPaymentId: string,
