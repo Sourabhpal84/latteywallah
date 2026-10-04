@@ -5,7 +5,7 @@ export default function TermsPage() {
     <main className="policy-page">
       <header className="detail-header">
         <Link href="/" className="back-link">← BACK TO STORE</Link>
-        <Link href="/" className="logo">LATTEY <span>WALA</span></Link>
+        <Link href="/" className="logo"><img className="brand-mark" src="/icons/lattey-walla-wolf-source.png" alt="" /> LATTEY <span>WALA</span></Link>
       </header>
       <article className="policy-content">
         <p className="eyebrow">CUSTOMER INFORMATION</p>

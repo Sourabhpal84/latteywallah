@@ -143,6 +143,7 @@ export default function Home() {
           <a href="#about">ABOUT</a>
         </nav>
         <a className="logo" href="#top">
+          <img className="brand-mark" src="/icons/lattey-walla-wolf-source.png" alt="" />
           LATTEY <span>WALA</span>
         </a>
         <div className="actions">
@@ -349,6 +350,7 @@ export default function Home() {
       <footer className="footer" id="about">
         <div className="footer-brand">
           <a className="logo" href="#top">
+            <img className="brand-mark" src="/icons/lattey-walla-wolf-source.png" alt="" />
             LATTEY <span>WALA</span>
           </a>
           <p>Everyday style. Elevated.</p>
