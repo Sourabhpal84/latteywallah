@@ -70,11 +70,14 @@ export default function AdminPage() {
   const addMainCategory = async () => {
     const name = prompt("Main category name");
     if (!name?.trim()) return;
+    const image = prompt("Category image URL (optional; used on the homepage card)");
+    if (image === null) return;
     try {
       const node = await addCategory({
         name: name.trim(),
         slug: slugify(name),
         parentId: null,
+        image: image.trim(),
         active: true,
         sortOrder: Date.now(),
       });
@@ -87,10 +90,8 @@ export default function AdminPage() {
   const addSubcategory = async (parent: CategoryNode) => {
     const name = prompt(`Subcategory inside ${parent.name}`);
     if (!name?.trim()) return;
-    const image = prompt(
-      "Subcategory image URL (required for the visual card)",
-    );
-    if (!image?.trim()) return;
+    const image = prompt("Subcategory image URL (optional)");
+    if (image === null) return;
     try {
       const node = await addCategory({
         name: name.trim(),

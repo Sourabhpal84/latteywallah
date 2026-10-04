@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { CategoryNode, slugify } from "@/lib/category-tree";
@@ -10,6 +10,7 @@ import {
   addCategory,
   deleteCategory,
   getCategories,
+  updateCategory,
 } from "@/lib/firestore-catalog";
 
 const seed: CategoryNode[] = [];
@@ -43,10 +44,8 @@ export default function AdminCategoriesPage() {
   const add = async (parentId: string | null) => {
     const name = prompt(parentId ? "Subcategory name" : "Main category name");
     if (!name?.trim()) return;
-    const image = parentId
-      ? prompt("Subcategory image URL (required for the visual card)")
-      : "";
-    if (parentId && !image?.trim()) return;
+    const image = prompt("Category image URL (optional; used on the category card)");
+    if (image === null) return;
     try {
       const node = await addCategory({
         name: name.trim(),
@@ -58,6 +57,19 @@ export default function AdminCategoriesPage() {
       });
       setNodes((current) => [...current, node]);
       setNotice(`${node.name} created.`);
+    } catch (error) {
+      setNotice(catalogError(error));
+    }
+  };
+  const editImage = async (node: CategoryNode) => {
+    const image = prompt(`Image URL for ${node.name}`, node.image || "");
+    if (image === null) return;
+    try {
+      await updateCategory(node.id, { image: image.trim() });
+      setNodes((current) => current.map((item) => item.id === node.id
+        ? { ...item, image: image.trim() }
+        : item));
+      setNotice(image.trim() ? `${node.name} image updated.` : `${node.name} image removed.`);
     } catch (error) {
       setNotice(catalogError(error));
     }
@@ -92,6 +104,9 @@ export default function AdminCategoriesPage() {
             {nodes.filter((child) => child.parentId === node.id).length}{" "}
             subcategories
           </span>
+          <button className="tree-add" onClick={() => editImage(node)}>
+            <ImagePlus size={14} /> {node.image ? "EDIT IMAGE" : "ADD IMAGE"}
+          </button>
           <button className="tree-add" onClick={() => add(node.id)}>
             <Plus size={14} /> SUBCATEGORY
           </button>
