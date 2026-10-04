@@ -11,7 +11,8 @@ type StoreSettings = {
   deliveryCharge: string;
   freeDeliveryThreshold: string;
   storeOpen: boolean;
-  heroImage: string;
+  heroImageDesktop: string;
+  heroImageMobile: string;
 };
 
 const defaults: StoreSettings = {
@@ -20,7 +21,8 @@ const defaults: StoreSettings = {
   deliveryCharge: "99",
   freeDeliveryThreshold: "1999",
   storeOpen: true,
-  heroImage: "",
+  heroImageDesktop: "",
+  heroImageMobile: "",
 };
 
 export default function SettingsPage() {
@@ -38,7 +40,13 @@ export default function SettingsPage() {
       try {
         const snapshot = await getDoc(doc(db, "settings", "store"));
         if (snapshot.exists()) {
-          setForm((current) => ({ ...current, ...(snapshot.data() as Partial<StoreSettings>) }));
+          const data = snapshot.data();
+          setForm((current) => ({
+            ...current,
+            ...(data as Partial<StoreSettings>),
+            heroImageDesktop: String(data.heroImageDesktop || data.heroImage || ""),
+            heroImageMobile: String(data.heroImageMobile || ""),
+          }));
         }
       } catch (error) {
         setMessage(`Could not load settings: ${String((error as Error).message || error)}`);
@@ -78,21 +86,35 @@ export default function SettingsPage() {
           <section className="hero-image-settings wide">
             <p className="eyebrow">HOMEPAGE HERO</p>
             <h2>Background image</h2>
-            <p>Paste a public image URL. The preview shows how it will look behind the homepage headline.</p>
+            <p>Use separate public image URLs for desktop and mobile. Images display in full without cropping; empty mobile URL uses the desktop image.</p>
             <label>
-              Hero image URL
+              Desktop image URL
               <input
                 type="url"
                 placeholder="https://example.com/hero.jpg"
-                value={form.heroImage}
-                onChange={(event) => setForm({ ...form, heroImage: event.target.value })}
+                value={form.heroImageDesktop}
+                onChange={(event) => setForm({ ...form, heroImageDesktop: event.target.value })}
               />
             </label>
-            {form.heroImage ? (
-              <div className="hero-image-preview" style={{ backgroundImage: `linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.05)), url("${form.heroImage.replaceAll('"', '%22')}")` }}>
+            {form.heroImageDesktop ? (
+              <div className="hero-image-preview" style={{ backgroundImage: `linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.05)), url("${form.heroImageDesktop.replaceAll('"', '%22')}")` }}>
                 <span>Everyday style. <i>Elevated.</i></span>
               </div>
-            ) : <p className="hero-image-empty">Current default hero image will be used until you add a URL.</p>}
+            ) : <p className="hero-image-empty">Current default hero image will be used until you add a desktop URL.</p>}
+            <label>
+              Mobile image URL
+              <input
+                type="url"
+                placeholder="https://example.com/hero-mobile.jpg"
+                value={form.heroImageMobile}
+                onChange={(event) => setForm({ ...form, heroImageMobile: event.target.value })}
+              />
+            </label>
+            {form.heroImageMobile && (
+              <div className="hero-image-preview hero-image-preview-mobile" style={{ backgroundImage: `linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.05)), url("${form.heroImageMobile.replaceAll('"', '%22')}")` }}>
+                <span>Everyday style. <i>Elevated.</i></span>
+              </div>
+            )}
           </section>
           <label>Store name<input value={form.storeName} onChange={(event) => setForm({ ...form, storeName: event.target.value })} /></label>
           <label>Support phone<input value={form.supportPhone} onChange={(event) => setForm({ ...form, supportPhone: event.target.value })} /></label>

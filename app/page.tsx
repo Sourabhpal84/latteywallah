@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Heart,
@@ -30,7 +30,7 @@ export default function Home() {
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [heroImage, setHeroImage] = useState("");
+  const [heroImages, setHeroImages] = useState({ desktop: "", mobile: "" });
   const subcategoryRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setCart(readCart());
@@ -45,8 +45,13 @@ export default function Home() {
   useEffect(() => (auth ? onAuthStateChanged(auth, setUser) : undefined), []);
   useEffect(
     () => onSnapshot(doc(db, "settings", "store"), (snapshot) => {
-      const image = snapshot.data()?.heroImage;
-      setHeroImage(typeof image === "string" ? image : "");
+      const settings = snapshot.data();
+      const desktop = settings?.heroImageDesktop || settings?.heroImage;
+      const mobile = settings?.heroImageMobile;
+      setHeroImages({
+        desktop: typeof desktop === "string" ? desktop : "",
+        mobile: typeof mobile === "string" ? mobile : "",
+      });
     }),
     [],
   );
@@ -177,7 +182,10 @@ export default function Home() {
       <section
         className="hero"
         id="top"
-        style={heroImage ? { backgroundImage: `linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.05)), url("${heroImage.replaceAll('"', '%22')}")` } : undefined}
+        style={{
+          "--hero-desktop": heroImages.desktop ? `url("${heroImages.desktop.replaceAll('"', '%22')}")` : undefined,
+          "--hero-mobile": heroImages.mobile ? `url("${heroImages.mobile.replaceAll('"', '%22')}")` : undefined,
+        } as CSSProperties}
       >
         <div className="hero-copy">
           <p className="eyebrow">THE EVERYDAY EDIT — 01</p>
