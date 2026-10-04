@@ -267,6 +267,44 @@ input {
 .hero-copy {
   max-width: 590px;
 }
+.hero-image-settings {
+  background: #ebeae6;
+  padding: 22px;
+  margin-bottom: 8px;
+}
+.hero-image-settings h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+.hero-image-settings > p:not(.eyebrow) {
+  color: #666;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+.hero-image-preview {
+  min-height: 230px;
+  margin-top: 16px;
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  background-position: center 35%;
+  background-size: cover;
+  color: #fff;
+}
+.hero-image-preview span {
+  max-width: 320px;
+  font-size: clamp(26px, 5vw, 48px);
+  font-weight: 700;
+  line-height: .95;
+  letter-spacing: -.06em;
+}
+.hero-image-preview i {
+  font-family: "Playfair Display", serif;
+}
+.hero-image-settings .hero-image-empty {
+  margin: 12px 0 0;
+  font-size: 12px;
+}
 .hero h1 {
   font-size: clamp(52px, 8vw, 110px);
   line-height: 0.95;

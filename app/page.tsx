@@ -11,7 +11,8 @@ import {
   X,
 } from "lucide-react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import { Product } from "@/lib/products";
 import { watchCatalog } from "@/lib/firestore-catalog";
 import { CategoryNode, descendantsOf } from "@/lib/category-tree";
@@ -29,6 +30,7 @@ export default function Home() {
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [heroImage, setHeroImage] = useState("");
   const subcategoryRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setCart(readCart());
@@ -41,6 +43,13 @@ export default function Home() {
     };
   }, []);
   useEffect(() => (auth ? onAuthStateChanged(auth, setUser) : undefined), []);
+  useEffect(
+    () => onSnapshot(doc(db, "settings", "store"), (snapshot) => {
+      const image = snapshot.data()?.heroImage;
+      setHeroImage(typeof image === "string" ? image : "");
+    }),
+    [],
+  );
   useEffect(
     () =>
       watchCatalog(setCatalog, setCategoryNodes, (error) =>
@@ -165,7 +174,11 @@ export default function Home() {
           </button>
         </div>
       </header>
-      <section className="hero" id="top">
+      <section
+        className="hero"
+        id="top"
+        style={heroImage ? { backgroundImage: `linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.05)), url("${heroImage.replaceAll('"', '%22')}")` } : undefined}
+      >
         <div className="hero-copy">
           <p className="eyebrow">THE EVERYDAY EDIT — 01</p>
           <h1>
