@@ -346,12 +346,37 @@ export default function Home() {
           </div>
         )}
       </section>
-      <footer id="about">
+      <footer className="footer" id="about">
         <div className="footer-brand">
           <a className="logo" href="#top">
             LATTEY <span>WALA</span>
           </a>
           <p>Everyday style. Elevated.</p>
+          <p className="footer-company">LATTEYWALA GARMENTS CONCAVE PVT. LTD.</p>
+        </div>
+        <div className="footer-links">
+          <div>
+            <p className="eyebrow">EXPLORE</p>
+            <a href="#top">Home</a>
+            <a href="#shop">Shop</a>
+            <a href="#collections">Collections</a>
+            <a href="#about">About us</a>
+          </div>
+          <div>
+            <p className="eyebrow">HELP & SUPPORT</p>
+            <a href="/help">Help & Support</a>
+            <a href="/complaints">Orders, returns & complaints</a>
+            <a href="mailto:latteywala@gmail.com">latteywala@gmail.com</a>
+            <a href="tel:+919821278468">+91 98212 78468</a>
+          </div>
+          <div>
+            <p className="eyebrow">POLICIES</p>
+            <a href="/terms">Terms & Conditions</a>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <span>© {new Date().getFullYear()} LATTEYWALA GARMENTS CONCAVE PVT. LTD. All rights reserved.</span>
+          <span>Made with care in India</span>
         </div>
       </footer>
       {cartOpen && (
