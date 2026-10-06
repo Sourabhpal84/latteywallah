@@ -227,6 +227,7 @@ input {
 }
 .logo span {
   font-weight: 400;
+  color: #777;
 }
 .icon,
 .bag {
@@ -676,6 +677,9 @@ footer {
 }
 .footer-brand .logo {
   font-size: 17px;
+}
+.footer-brand .logo span {
+  color: #aaa;
 }
 .footer-brand .brand-mark {
   width: 38px;
