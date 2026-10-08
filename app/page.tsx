@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Heart,
   Menu,
+  Plus,
   Search,
   ShoppingBag,
   UserRound,
@@ -507,13 +508,13 @@ function ProductCard({
             window.location.href = `/product/${product.id}`;
           }}
         >
-          SELECT SIZE <ArrowRight size={14} />
+          ADD TO BAG <Plus size={14} />
         </button>
       </div>
       <div className="product-meta">
         <div>
           <h3>{product.name}</h3>
-          <p>{product.color}</p>
+          <p>{product.category || product.color}</p>
         </div>
         <div className="price">
           <b>
