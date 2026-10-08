@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, ImagePlus, Pencil, Plus, Trash2, X } from "lucide-react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { CategoryNode, slugify } from "@/lib/category-tree";
@@ -14,6 +14,7 @@ import {
   deleteProduct,
   getCategories,
   getProducts,
+  updateProduct,
 } from "@/lib/firestore-catalog";
 
 const blank = {
@@ -40,6 +41,7 @@ export default function AdminPage() {
   const [items, setItems] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [form, setForm] = useState(blank);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -133,11 +135,43 @@ export default function AdminPage() {
       setNotice(catalogError(error));
     }
   };
-  const addProduct = async (event: FormEvent) => {
+  const editProduct = (product: Product) => {
+    setEditingId(product.id);
+    const images = (product.images?.length ? product.images : [product.image]).slice(0, 4);
+    const variantPrices = new Map<string, number>();
+    (product.variants || []).forEach((variant) => {
+      if (!variantPrices.has(variant.size)) variantPrices.set(variant.size, variant.price);
+    });
+    const variantSizes = (product.variants || []).map((variant) => variant.size).filter((size, index, all) => all.indexOf(size) === index);
+    const sizes = product.sizes?.length ? product.sizes : variantSizes;
+    const category = categoryOptions.find((item) => item.id === product.categoryId)
+      || categoryOptions.find((item) => item.name === product.category);
+    setForm({
+      name: product.name,
+      description: product.description || "",
+      mrp: String(product.mrp ?? product.price),
+      price: String(product.price),
+      colors: (product.colors?.length ? product.colors : [product.color]).filter(Boolean).join(", "),
+      sizes: sizes.map((size) => `${size}:${variantPrices.get(size) ?? product.price}`).join(", "),
+      images: [...images, ...Array(Math.max(0, 4 - images.length)).fill("")],
+      material: product.material || "",
+      categoryId: category?.id || product.categoryId || "",
+    });
+    document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm(blank);
+  };
+  const saveProduct = async (event: FormEvent) => {
     event.preventDefault();
     const images = form.images.filter(Boolean);
-    if (!form.name || images.length < 4 || !form.categoryId) {
-      setNotice("Product name, category and 4 images are required.");
+    if (!form.name.trim() || !images.length || !form.categoryId) {
+      setNotice(editingId ? "Product name, category and at least 1 image are required." : "Product name, category and 4 images are required.");
+      return;
+    }
+    if (!editingId && images.length < 4) {
+      setNotice("New products need at least 4 image URLs.");
       return;
     }
     const category = categoryOptions.find(
@@ -172,22 +206,33 @@ export default function AdminPage() {
       active: true,
       published: true,
       variants: colors.flatMap((color) =>
-        sizeEntries.map(({ size, price: sizePrice }) => ({
-          id: `${Date.now()}-${color}-${size}`,
+        sizeEntries.map(({ size, price: sizePrice }) => {
+          const previous = editingId
+            ? items.find((item) => item.id === editingId)?.variants?.find((variant) => variant.color === color && variant.size === size)
+            : undefined;
+          return ({
+          id: previous?.id || `${Date.now()}-${color}-${size}`,
           color,
           size,
           price:
             Number.isFinite(sizePrice) && sizePrice >= 0 ? sizePrice : price,
-          stock: 10,
-          sku: `${slugify(form.name).slice(0, 8)}-${color.slice(0, 2)}-${size}`,
-        })),
+          stock: previous?.stock ?? 10,
+          sku: previous?.sku || `${slugify(form.name).slice(0, 8)}-${color.slice(0, 2)}-${size}`,
+        }); }),
       ),
     };
     try {
-      const saved = await createProduct(product);
-      setItems((current) => [saved, ...current]);
+      if (editingId) {
+        await updateProduct(editingId, product);
+        setItems((current) => current.map((item) => item.id === editingId ? { ...item, ...product } : item));
+        setNotice(`${product.name} updated in Firestore.`);
+      } else {
+        const saved = await createProduct(product);
+        setItems((current) => [saved, ...current]);
+        setNotice("Product saved to Firestore.");
+      }
+      setEditingId(null);
       setForm(blank);
-      setNotice("Product saved to Firestore.");
     } catch (error) {
       setNotice(catalogError(error));
     }
@@ -260,6 +305,7 @@ export default function AdminPage() {
             </div>
             <span className="admin-status">● FIRESTORE</span>
           </div>
+          {notice && <p className="admin-notice">{notice}</p>}
           <section className="admin-section" id="categories">
             <div className="admin-section-head">
               <div>
@@ -270,7 +316,6 @@ export default function AdminPage() {
                 <Plus size={15} /> ADD MAIN CATEGORY
               </button>
             </div>
-            {notice && <p className="admin-notice">{notice}</p>}
             <div className="category-tree">{tree(null)}</div>
           </section>
           <section className="admin-section" id="products">
@@ -292,6 +337,13 @@ export default function AdminPage() {
                   </div>
                   <strong>₹{product.price.toLocaleString("en-IN")}</strong>
                   <button
+                    onClick={() => editProduct(product)}
+                    aria-label={`Edit ${product.name}`}
+                    title="Edit product"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
                     onClick={() => removeProduct(product)}
                     aria-label={`Delete ${product.name}`}
                   >
@@ -301,14 +353,15 @@ export default function AdminPage() {
               ))}
             </div>
           </section>
-          <section className="admin-section">
+          <section className="admin-section" id="product-form">
             <div className="admin-section-head">
               <div>
-                <p className="eyebrow">ADD PRODUCT</p>
-                <h2>New product</h2>
+                <p className="eyebrow">{editingId ? "EDIT PRODUCT" : "ADD PRODUCT"}</p>
+                <h2>{editingId ? `Update ${form.name}` : "New product"}</h2>
               </div>
+              {editingId && <button className="button button-outline" type="button" onClick={cancelEdit}>CANCEL EDIT</button>}
             </div>
-            <form className="admin-form" onSubmit={addProduct}>
+            <form className="admin-form" onSubmit={saveProduct}>
               <label>
                 Product name
                 <input
@@ -428,7 +481,7 @@ export default function AdminPage() {
                         <>
                           <ImagePlus size={19} />
                           <input
-                            required
+                            required={!editingId}
                             type="url"
                             placeholder={`Image ${index + 1}`}
                             value={image}
@@ -451,7 +504,7 @@ export default function AdminPage() {
                 className="button button-dark submit-product"
                 type="submit"
               >
-                <Plus size={16} /> ADD PRODUCT
+                {editingId ? <Pencil size={16} /> : <Plus size={16} />} {editingId ? "SAVE CHANGES" : "ADD PRODUCT"}
               </button>
             </form>
           </section>
