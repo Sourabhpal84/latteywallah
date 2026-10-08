@@ -19,11 +19,20 @@ type Coupon = {
   active: boolean;
 };
 
-const blank = { code: "", type: "percent" as const, value: "10", minOrder: "0", maxDiscount: "", startsAt: "", expiresAt: "" };
+type CouponForm = {
+  code: string;
+  type: "percent" | "fixed";
+  value: string;
+  minOrder: string;
+  maxDiscount: string;
+  startsAt: string;
+  expiresAt: string;
+};
+const blank: CouponForm = { code: "", type: "percent", value: "10", minOrder: "0", maxDiscount: "", startsAt: "", expiresAt: "" };
 export default function AdminCouponsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [form, setForm] = useState(blank);
+  const [form, setForm] = useState<CouponForm>(blank);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
