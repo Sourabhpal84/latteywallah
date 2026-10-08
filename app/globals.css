@@ -1870,6 +1870,56 @@ details p {
   justify-content: space-between;
   margin-top: 25px;
 }
+.auth-method-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--line);
+  margin: 25px 0 18px;
+}
+.auth-method-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 12px 8px;
+  background: transparent;
+  color: #777;
+  font: 10px "DM Mono";
+  letter-spacing: .1em;
+  cursor: pointer;
+}
+.auth-method-tabs button.selected {
+  border-bottom-color: #111;
+  color: #111;
+}
+.otp-consent,
+.auth-backup-note {
+  color: #777;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.auth-backup-note button {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+#recaptcha-container,
+#profile-recaptcha {
+  margin: 12px 0;
+}
+.phone-link-panel {
+  margin-top: 40px;
+  padding: 24px;
+  background: #ebeae6;
+}
+.phone-link-panel h2 {
+  margin: 8px 0;
+}
+.phone-link-panel > p:not(.eyebrow) {
+  color: #666;
+  font-size: 13px;
+  line-height: 1.6;
+}
 .login-error {
   background: #f5dede;
   color: #8a2a2a;
