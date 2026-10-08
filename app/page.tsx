@@ -32,6 +32,9 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [heroImages, setHeroImages] = useState({ desktop: "", mobile: "" });
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [introVisible, setIntroVisible] = useState(true);
+  const introStartedAt = useRef(Date.now());
   const subcategoryRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setCart(readCart());
@@ -58,11 +61,56 @@ export default function Home() {
   );
   useEffect(
     () =>
-      watchCatalog(setCatalog, setCategoryNodes, (error) =>
-        console.warn("Live catalog update failed:", error),
+      watchCatalog(
+        (nextCatalog) => {
+          setCatalog(nextCatalog);
+          setCatalogLoaded(true);
+        },
+        setCategoryNodes,
+        (error) => {
+          console.warn("Live catalog update failed:", error);
+          setCatalogLoaded(true);
+        },
       ),
     [],
   );
+  useEffect(() => {
+    const maxWait = window.setTimeout(() => setIntroVisible(false), 5500);
+    if (!catalogLoaded) return () => window.clearTimeout(maxWait);
+
+    let cancelled = false;
+    const imageUrls = [
+      ...catalog.map((product) => product.image),
+      ...categoryNodes.map((category) => category.image || ""),
+      heroImages.desktop,
+      heroImages.mobile,
+    ].filter((url): url is string => Boolean(url));
+    const preload = imageUrls.map(
+      (url) =>
+        new Promise<void>((resolve) => {
+          const image = new Image();
+          image.onload = () => resolve();
+          image.onerror = () => resolve();
+          image.src = url;
+          if (image.complete) resolve();
+          window.setTimeout(resolve, 4000);
+        }),
+    );
+    Promise.all(preload).then(() => {
+      if (cancelled) return;
+      const minimumIntro = 1500;
+      const remaining = Math.max(
+        0,
+        minimumIntro - (Date.now() - introStartedAt.current),
+      );
+      window.setTimeout(() => setIntroVisible(false), remaining);
+    });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(maxWait);
+    };
+  }, [catalogLoaded, catalog, categoryNodes, heroImages]);
   const selected = categoryNodes.find(
     (category) => category.id === activeCategory,
   );
@@ -127,6 +175,23 @@ export default function Home() {
   };
   return (
     <main>
+      {introVisible && (
+        <div className="welcome-intro" aria-label="Welcome to Lattey Wala">
+          <div className="welcome-intro-content">
+            <span className="welcome-orbit welcome-orbit-one" />
+            <span className="welcome-orbit welcome-orbit-two" />
+            <img
+              className="welcome-mark"
+              src="/icons/lattey-walla-wolf-source.png"
+              alt=""
+            />
+            <p className="welcome-kicker">A LITTLE MORE YOU</p>
+            <h1>LATTEY <span>WALA</span></h1>
+            <p className="welcome-tagline">Everyday style. Elevated.</p>
+            <div className="welcome-progress"><span /></div>
+          </div>
+        </div>
+      )}
       <div className="announcement">
         FREE SHIPPING ON ORDERS ABOVE ₹1,999 · EASY 7-DAY RETURNS
       </div>
