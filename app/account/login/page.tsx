@@ -19,7 +19,7 @@ type Mode = "login" | "signup" | "otp";
 
 function authError(error: unknown) {
   const code = (error as { code?: string }).code;
-  if (code === "auth/operation-not-allowed") return "Phone sign-in is not enabled for this Firebase project yet.";
+  if (code === "auth/operation-not-allowed") return "Firebase rejected phone sign-in. Check that Phone is enabled and India is allowed under Authentication → Settings → SMS region policy. Also confirm this site uses that same Firebase project.";
   if (code === "auth/unauthorized-domain") return "This website domain is not authorized for phone sign-in in Firebase.";
   if (code === "auth/too-many-requests" || code === "auth/quota-exceeded") return "Too many OTP requests. Please try again later.";
   if (code === "auth/invalid-phone-number") return "Enter a valid 10-digit Indian mobile number.";
