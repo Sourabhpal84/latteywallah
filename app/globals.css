@@ -1948,6 +1948,96 @@ details p {
   padding: 0 5vw;
   text-align: center;
 }
+.coupon-entry {
+  margin: 24px 0;
+  padding: 18px;
+  background: #ebeae6;
+}
+.coupon-entry > label {
+  display: block;
+  margin-bottom: 10px;
+  font: 10px "DM Mono";
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.coupon-entry > div {
+  display: flex;
+  gap: 8px;
+}
+.coupon-entry input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  padding: 12px;
+  background: #fff;
+  text-transform: uppercase;
+}
+.coupon-entry button {
+  border: 0;
+  padding: 0 16px;
+  background: #111;
+  color: #fff;
+  font: 10px "DM Mono";
+  cursor: pointer;
+}
+.coupon-entry button:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+.coupon-entry small {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.coupon-success { color: #235b39; }
+.coupon-error { color: #a33; }
+.coupon-discount-line { color: #235b39; }
+.coupon-manager {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.coupon-manager h1 {
+  margin: 8px 0;
+  font-size: clamp(38px, 6vw, 64px);
+  letter-spacing: -.06em;
+}
+.coupon-intro {
+  margin: 0 0 28px;
+  color: #666;
+}
+.coupon-form {
+  padding: 22px;
+  background: #ebeae6;
+}
+.coupon-list {
+  margin-top: 48px;
+}
+.coupon-list h2 {
+  margin-bottom: 18px;
+}
+.coupon-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 4px;
+  border-top: 1px solid var(--line);
+}
+.coupon-row > div {
+  display: grid;
+  gap: 5px;
+  flex: 1;
+}
+.coupon-row > div span,
+.coupon-row > div small {
+  color: #777;
+  font-size: 12px;
+}
+.coupon-active {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
 .checkout-empty h1 {
   font-size: clamp(42px, 6vw, 72px);
   letter-spacing: -0.07em;

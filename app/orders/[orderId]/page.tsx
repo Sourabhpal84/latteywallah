@@ -12,7 +12,10 @@ type OrderData = {
   displayOrderId?: string;
   totalAmount?: number;
   subtotal?: number;
+  discount?: number;
+  couponCode?: string | null;
   deliveryCharge?: number;
+  taxAmount?: number;
   paymentStatus?: string;
   orderStatus?: string;
   deliveryAddress?: {
@@ -162,12 +165,14 @@ export default function OrderPage({ params }: { params: { orderId: string } }) {
               <span>Subtotal</span>
               <b>{money(order.subtotal)}</b>
             </p>
+            {!!order.discount && <p><span>Coupon{order.couponCode ? ` (${order.couponCode})` : ""}</span><b>−{money(order.discount)}</b></p>}
             <p>
               <span>Delivery</span>
               <b>
                 {order.deliveryCharge ? money(order.deliveryCharge) : "FREE"}
               </b>
             </p>
+            {!!order.taxAmount && <p><span>Tax</span><b>{money(order.taxAmount)}</b></p>}
           </aside>
           <section className="customer-items">
             <h2>

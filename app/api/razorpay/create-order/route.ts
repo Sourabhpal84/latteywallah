@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, requireUser } from "@/lib/firebase-admin";
 import { isValidPincode, normalizePincode } from "@/lib/commerce";
+import { calculateCouponDiscount, CouponRecord } from "@/lib/coupons";
 
 export const runtime = "nodejs";
 type ClientItem = {
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
       items?: ClientItem[];
       address?: Address;
       checkoutKey?: string;
+      couponCode?: string;
     };
     const address = body.address || {};
     const items = body.items || [];
@@ -167,6 +169,20 @@ export async function POST(request: Request) {
       (total, item) => total + item.total,
       0,
     );
+    const couponCode = String(body.couponCode || "").trim().toUpperCase();
+    let discount = 0;
+    if (couponCode) {
+      if (!/^[A-Z0-9_-]{3,30}$/.test(couponCode))
+        return NextResponse.json({ error: "Invalid coupon code." }, { status: 400 });
+      const couponSnapshot = await adminDb.collection("coupons").doc(couponCode).get();
+      if (!couponSnapshot.exists)
+        return NextResponse.json({ error: "Coupon code not found." }, { status: 400 });
+      try {
+        discount = calculateCouponDiscount(couponSnapshot.data() as CouponRecord, subtotal);
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : "Coupon cannot be applied." }, { status: 400 });
+      }
+    }
     const deliveryCharge =
       Number.isFinite(freeDeliveryAbove) &&
       freeDeliveryAbove > 0 &&
@@ -182,8 +198,8 @@ export async function POST(request: Request) {
       configuredTaxRate <= 100
         ? configuredTaxRate
         : 0;
-    const taxAmount = Math.round(subtotal * taxRate) / 100;
-    const totalAmount = subtotal + deliveryCharge + taxAmount;
+    const taxAmount = Math.round((subtotal - discount) * taxRate) / 100;
+    const totalAmount = subtotal - discount + deliveryCharge + taxAmount;
     const attemptRef = adminDb
       .collection("checkoutAttempts")
       .doc(`${user.uid}_${checkoutKey}`);
@@ -201,6 +217,8 @@ export async function POST(request: Request) {
             deliveryCharge?: number;
             taxRate?: number;
             taxAmount?: number;
+            couponCode?: string;
+            discount?: number;
             updatedAt?: string;
           }
         | undefined;
@@ -211,7 +229,9 @@ export async function POST(request: Request) {
         previous.pincode === pincode &&
         previous.deliveryCharge === deliveryCharge &&
         previous.taxRate === taxRate &&
-        previous.taxAmount === taxAmount
+        previous.taxAmount === taxAmount &&
+        (previous.couponCode || "") === couponCode &&
+        (previous.discount || 0) === discount
       )
         return previous;
       if (
@@ -230,6 +250,8 @@ export async function POST(request: Request) {
           deliveryCharge,
           taxRate,
           taxAmount,
+          couponCode,
+          discount,
           updatedAt: now,
           createdAt: previous?.updatedAt || now,
         },
@@ -302,7 +324,8 @@ export async function POST(request: Request) {
         },
         items: verifiedItems,
         subtotal,
-        discount: 0,
+        discount,
+        couponCode: couponCode || null,
         deliveryCharge,
         taxRate,
         taxAmount,
@@ -336,6 +359,8 @@ export async function POST(request: Request) {
           },
           items: verifiedItems,
           subtotal,
+          discount,
+          couponCode: couponCode || null,
           deliveryCharge,
           taxRate,
           taxAmount,

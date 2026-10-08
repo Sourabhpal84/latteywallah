@@ -65,6 +65,10 @@ export default function CheckoutPage() {
   const [userReady, setUserReady] = useState(false);
   const [taxRate, setTaxRate] = useState(0);
   const [error, setError] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number; subtotal: number } | null>(null);
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const checkoutKey = useRef(crypto.randomUUID());
   const paymentOpening = useRef(false);
@@ -171,6 +175,8 @@ export default function CheckoutPage() {
     });
   }, []);
   const updateQuantity = (index: number, amount: number) => {
+    setAppliedCoupon(null);
+    setCouponMessage("");
     const next = lines
       .map((line, itemIndex) =>
         itemIndex === index
@@ -193,8 +199,35 @@ export default function CheckoutPage() {
       ? 0
       : selectedArea.deliveryCharge
     : undefined;
-  const taxAmount = Math.round(subtotal * taxRate) / 100;
-  const total = subtotal + (delivery ?? 0) + taxAmount;
+  const discount = appliedCoupon?.subtotal === subtotal ? appliedCoupon.discount : 0;
+  const taxAmount = Math.round((subtotal - discount) * taxRate) / 100;
+  const total = subtotal - discount + (delivery ?? 0) + taxAmount;
+  const applyCoupon = async () => {
+    if (!auth?.currentUser) {
+      window.location.href = "/account/login";
+      return;
+    }
+    setCouponLoading(true);
+    setCouponMessage("");
+    setAppliedCoupon(null);
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ code: couponCode, subtotal }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Coupon could not be applied.");
+      setAppliedCoupon({ code: result.code, discount: Number(result.discount), subtotal });
+      setCouponCode(result.code);
+      setCouponMessage(result.message);
+    } catch (error) {
+      setCouponMessage(error instanceof Error ? error.message : "Coupon could not be applied.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (paymentOpening.current) return;
@@ -222,6 +255,7 @@ export default function CheckoutPage() {
           items: lines,
           address: form,
           checkoutKey: checkoutKey.current,
+          couponCode: appliedCoupon?.subtotal === subtotal ? appliedCoupon.code : "",
         }),
       });
       const created = await createResponse.json();
@@ -484,11 +518,20 @@ export default function CheckoutPage() {
               <strong>{money(line.price * line.quantity)}</strong>
             </div>
           ))}
+          <div className="coupon-entry">
+            <label htmlFor="coupon-code">Coupon code</label>
+            <div>
+              <input id="coupon-code" value={couponCode} disabled={Boolean(appliedCoupon)} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} placeholder="Enter code" />
+              {appliedCoupon ? <button type="button" onClick={() => { setAppliedCoupon(null); setCouponMessage(""); }}>REMOVE</button> : <button type="button" disabled={couponLoading || !couponCode.trim() || subtotal <= 0} onClick={applyCoupon}>{couponLoading ? "…" : "APPLY"}</button>}
+            </div>
+            {couponMessage && <small className={appliedCoupon ? "coupon-success" : "coupon-error"}>{couponMessage}</small>}
+          </div>
           <div className="summary-total">
             <p>
               <span>Subtotal</span>
               <b>{money(subtotal)}</b>
             </p>
+            {discount > 0 && <p className="coupon-discount-line"><span>Coupon ({appliedCoupon?.code})</span><b>−{money(discount)}</b></p>}
             <p>
               <span>Delivery fee</span>
               <b>

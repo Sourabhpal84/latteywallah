@@ -56,6 +56,7 @@ type Order = {
   }>;
   subtotal?: number;
   discount?: number;
+  couponCode?: string | null;
   deliveryCharge?: number;
   totalAmount?: number;
   paymentStatus?: string;
@@ -245,8 +246,8 @@ export default function AdminOrderDetail({
               <b>{money(order.subtotal)}</b>
             </p>
             <p>
-              <span>Discount</span>
-              <b>{money(order.discount)}</b>
+              <span>Discount{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+              <b>−{money(order.discount)}</b>
             </p>
             <p>
               <span>Delivery (pincode based)</span>
