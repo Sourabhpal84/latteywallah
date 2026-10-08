@@ -4,6 +4,7 @@ import { calculateCouponDiscount, CouponRecord } from "@/lib/coupons";
 
 export const runtime = "nodejs";
 
+// Kept as a server-side validation endpoint for non-checkout clients.
 export async function POST(request: Request) {
   try {
     await requireUser(request);

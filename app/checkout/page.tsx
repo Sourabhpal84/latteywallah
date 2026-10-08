@@ -7,6 +7,7 @@ import { auth, db } from "@/lib/firebase";
 import { CART_UPDATED_EVENT, CartLine, readCart, writeCart } from "@/lib/cart";
 import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
 import { normalizePincode } from "@/lib/commerce";
+import { calculateCouponDiscount, CouponRecord } from "@/lib/coupons";
 
 declare global {
   interface Window {
@@ -211,19 +212,19 @@ export default function CheckoutPage() {
     setCouponMessage("");
     setAppliedCoupon(null);
     try {
-      const token = await auth.currentUser.getIdToken();
-      const response = await fetch("/api/coupons/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ code: couponCode, subtotal }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Coupon could not be applied.");
-      setAppliedCoupon({ code: result.code, discount: Number(result.discount), subtotal });
-      setCouponCode(result.code);
-      setCouponMessage(result.message);
+      const code = couponCode.trim().toUpperCase();
+      if (!/^[A-Z0-9_-]{3,30}$/.test(code)) throw new Error("Enter a valid coupon code.");
+      const snapshot = await getDoc(doc(db, "coupons", code));
+      if (!snapshot.exists()) throw new Error("Coupon code not found or unavailable.");
+      const coupon = snapshot.data() as CouponRecord;
+      if (coupon.active !== true) throw new Error("Coupon code not found or unavailable.");
+      const savings = calculateCouponDiscount(coupon, subtotal);
+      setAppliedCoupon({ code, discount: savings, subtotal });
+      setCouponCode(code);
+      setCouponMessage(coupon.type === "percent" ? `${coupon.value}% off applied.` : `₹${savings.toLocaleString("en-IN")} off applied.`);
     } catch (error) {
-      setCouponMessage(error instanceof Error ? error.message : "Coupon could not be applied.");
+      const code = (error as { code?: string }).code;
+      setCouponMessage(code === "permission-denied" ? "Coupon code not found or unavailable." : error instanceof Error ? error.message : "Coupon could not be applied.");
     } finally {
       setCouponLoading(false);
     }
