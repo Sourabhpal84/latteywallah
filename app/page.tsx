@@ -33,9 +33,16 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [heroImages, setHeroImages] = useState({ desktop: "", mobile: "" });
   const [catalogLoaded, setCatalogLoaded] = useState(false);
-  const [introVisible, setIntroVisible] = useState(true);
+  const [introVisible, setIntroVisible] = useState(false);
   const introStartedAt = useRef(Date.now());
   const subcategoryRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const introKey = "lattey-wala-welcome-shown";
+    if (window.sessionStorage.getItem(introKey)) return;
+    window.sessionStorage.setItem(introKey, "true");
+    introStartedAt.current = Date.now();
+    setIntroVisible(true);
+  }, []);
   useEffect(() => {
     setCart(readCart());
     const syncCart = () => setCart(readCart());
@@ -75,6 +82,7 @@ export default function Home() {
     [],
   );
   useEffect(() => {
+    if (!introVisible) return;
     const maxWait = window.setTimeout(() => setIntroVisible(false), 5500);
     if (!catalogLoaded) return () => window.clearTimeout(maxWait);
 
@@ -110,7 +118,7 @@ export default function Home() {
       cancelled = true;
       window.clearTimeout(maxWait);
     };
-  }, [catalogLoaded, catalog, categoryNodes, heroImages]);
+  }, [introVisible, catalogLoaded, catalog, categoryNodes, heroImages]);
   const selected = categoryNodes.find(
     (category) => category.id === activeCategory,
   );
