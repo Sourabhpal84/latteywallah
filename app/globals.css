@@ -1446,7 +1446,7 @@ details p {
 }
 .admin-product {
   display: grid;
-  grid-template-columns: 60px minmax(0, 1fr) 100px 35px 35px;
+  grid-template-columns: 60px minmax(0, 1fr) 100px repeat(4, 35px);
   align-items: center;
   gap: 17px;
   padding: 13px 0;
@@ -1477,6 +1477,25 @@ details p {
 .category-admin-list button {
   border: 0;
   background: none;
+  cursor: pointer;
+}
+.admin-product button:disabled,
+.tree-move:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+.tree-reorder {
+  display: flex;
+  gap: 2px;
+}
+.tree-move {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   cursor: pointer;
 }
 .admin-form {
@@ -3671,8 +3690,8 @@ details p {
     min-height: 42px;
   }
   .admin-product {
-    grid-template-columns: 45px minmax(0, 1fr) 30px 30px;
-    gap: 9px;
+    grid-template-columns: 45px minmax(0, 1fr) repeat(4, 30px);
+    gap: 5px;
     padding: 11px 0;
   }
   .admin-product img {
@@ -3733,6 +3752,13 @@ details p {
     align-items: center;
     padding: 12px 0;
     overflow-wrap: anywhere;
+  }
+  .tree-reorder {
+    gap: 0;
+  }
+  .tree-move {
+    width: 30px;
+    min-height: 38px;
   }
   .coupon-manager h1 {
     font-size: clamp(36px, 10vw, 48px);

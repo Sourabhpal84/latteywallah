@@ -167,7 +167,7 @@ export default function Home() {
         categoryMatch &&
         (!term || searchable.includes(term))
       );
-    });
+    }).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   }, [catalog, query, selected, visibleIds]);
   const products = catalog;
   const changeQuantity = (index: number, amount: number) => {

@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ImagePlus, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, ImagePlus, Pencil, Plus, Trash2, X } from "lucide-react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { CategoryNode, slugify } from "@/lib/category-tree";
@@ -14,6 +14,7 @@ import {
   deleteProduct,
   getCategories,
   getProducts,
+  updateCategory,
   updateProduct,
 } from "@/lib/firestore-catalog";
 
@@ -59,7 +60,9 @@ export default function AdminPage() {
         getProducts(),
         getCategories(),
       ]);
-      setItems(loadedProducts);
+      setItems(loadedProducts
+        .map((product, index) => ({ ...product, sortOrder: product.sortOrder ?? index }))
+        .sort((a, b) => a.sortOrder! - b.sortOrder!));
       setCategories(loadedCategories);
     };
     load().catch((error) => setNotice(catalogError(error)));
@@ -135,6 +138,38 @@ export default function AdminPage() {
       setNotice(catalogError(error));
     }
   };
+  const moveProduct = async (index: number, direction: -1 | 1) => {
+    const previous = items.slice().sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    const target = index + direction;
+    if (target < 0 || target >= previous.length) return;
+    const reordered = previous.slice();
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    const savedOrder = reordered.map((product, position) => ({ ...product, sortOrder: position }));
+    setItems(savedOrder);
+    try {
+      await Promise.all(savedOrder.map((product) => updateProduct(product.id, { sortOrder: product.sortOrder })));
+      setNotice("Product order saved to the storefront.");
+    } catch (error) {
+      setItems(previous);
+      setNotice(catalogError(error));
+    }
+  };
+  const moveCategory = async (parentId: string | null, index: number, direction: -1 | 1) => {
+    const previous = categoryOptions.filter((category) => category.parentId === parentId);
+    const target = index + direction;
+    if (target < 0 || target >= previous.length) return;
+    const reordered = previous.slice();
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    const savedOrder = reordered.map((category, position) => ({ ...category, sortOrder: position }));
+    setCategories((current) => current.map((category) => savedOrder.find((item) => item.id === category.id) || category));
+    try {
+      await Promise.all(savedOrder.map((category) => updateCategory(category.id, { sortOrder: category.sortOrder })));
+      setNotice("Category order saved to the storefront.");
+    } catch (error) {
+      setCategories((current) => current.map((category) => previous.find((item) => item.id === category.id) || category));
+      setNotice(catalogError(error));
+    }
+  };
   const editProduct = (product: Product) => {
     setEditingId(product.id);
     const images = (product.images?.length ? product.images : [product.image]).slice(0, 4);
@@ -205,6 +240,9 @@ export default function AdminPage() {
       material: form.material,
       active: true,
       published: true,
+      sortOrder: editingId
+        ? items.find((item) => item.id === editingId)?.sortOrder ?? items.length
+        : Math.max(-1, ...items.map((item, index) => item.sortOrder ?? index)) + 1,
       variants: colors.flatMap((color) =>
         sizeEntries.map(({ size, price: sizePrice }) => {
           const previous = editingId
@@ -240,7 +278,7 @@ export default function AdminPage() {
   const tree = (parentId: string | null, level = 0): React.ReactNode =>
     categoryOptions
       .filter((category) => category.parentId === parentId)
-      .map((category) => (
+      .map((category, position, siblings) => (
         <div
           className="category-tree-row"
           style={{ marginLeft: level * 24 }}
@@ -252,6 +290,10 @@ export default function AdminPage() {
             {items.filter((item) => item.categoryId === category.id).length}{" "}
             products
           </span>
+          <div className="tree-reorder" aria-label={`Reorder ${category.name}`}>
+            <button className="tree-move" disabled={position === 0} onClick={() => moveCategory(parentId, position, -1)} aria-label={`Move ${category.name} up`} title="Move up"><ArrowUp size={14} /></button>
+            <button className="tree-move" disabled={position === siblings.length - 1} onClick={() => moveCategory(parentId, position, 1)} aria-label={`Move ${category.name} down`} title="Move down"><ArrowDown size={14} /></button>
+          </div>
           <button className="tree-add" onClick={() => addSubcategory(category)}>
             <Plus size={14} /> ADD SUBCATEGORY
           </button>
@@ -326,7 +368,7 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="admin-products">
-              {items.map((product) => (
+              {items.slice().sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)).map((product, position, orderedItems) => (
                 <div className="admin-product" key={product.id}>
                   <img src={product.image} alt="" />
                   <div>
@@ -336,6 +378,8 @@ export default function AdminPage() {
                     </span>
                   </div>
                   <strong>₹{product.price.toLocaleString("en-IN")}</strong>
+                  <button disabled={position === 0} onClick={() => moveProduct(position, -1)} aria-label={`Move ${product.name} up`} title="Move up"><ArrowUp size={15} /></button>
+                  <button disabled={position === orderedItems.length - 1} onClick={() => moveProduct(position, 1)} aria-label={`Move ${product.name} down`} title="Move down"><ArrowDown size={15} /></button>
                   <button
                     onClick={() => editProduct(product)}
                     aria-label={`Edit ${product.name}`}
