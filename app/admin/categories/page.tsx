@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { CategoryNode, slugify } from "@/lib/category-tree";
@@ -88,11 +88,29 @@ export default function AdminCategoriesPage() {
       setNotice(catalogError(error));
     }
   };
+  const moveNode = async (parentId: string | null, index: number, direction: -1 | 1) => {
+    const previous = nodes
+      .filter((node) => node.parentId === parentId)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const target = index + direction;
+    if (target < 0 || target >= previous.length) return;
+    const reordered = previous.slice();
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    const savedOrder = reordered.map((node, position) => ({ ...node, sortOrder: position }));
+    setNodes((current) => current.map((node) => savedOrder.find((item) => item.id === node.id) || node));
+    try {
+      await Promise.all(savedOrder.map((node) => updateCategory(node.id, { sortOrder: node.sortOrder })));
+      setNotice("Category order saved to the storefront.");
+    } catch (error) {
+      setNodes((current) => current.map((node) => previous.find((item) => item.id === node.id) || node));
+      setNotice(catalogError(error));
+    }
+  };
   const tree = (parentId: string | null, level = 0): React.ReactNode =>
     nodes
       .filter((node) => node.parentId === parentId)
       .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((node) => (
+      .map((node, position, siblings) => (
         <div
           className="category-tree-row"
           style={{ marginLeft: `${level * 26}px` }}
@@ -104,6 +122,10 @@ export default function AdminCategoriesPage() {
             {nodes.filter((child) => child.parentId === node.id).length}{" "}
             subcategories
           </span>
+          <div className="tree-reorder" aria-label={`Reorder ${node.name}`}>
+            <button className="tree-move" disabled={position === 0} onClick={() => moveNode(parentId, position, -1)} aria-label={`Move ${node.name} up`} title="Move up"><ArrowUp size={14} /></button>
+            <button className="tree-move" disabled={position === siblings.length - 1} onClick={() => moveNode(parentId, position, 1)} aria-label={`Move ${node.name} down`} title="Move down"><ArrowDown size={14} /></button>
+          </div>
           <button className="tree-add" onClick={() => editImage(node)}>
             <ImagePlus size={14} /> {node.image ? "EDIT IMAGE" : "ADD IMAGE"}
           </button>
