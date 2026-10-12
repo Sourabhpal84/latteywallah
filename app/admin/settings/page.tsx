@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { updateEmail, updatePassword } from "firebase/auth";
 
 type StoreSettings = {
   storeName: string;
@@ -29,6 +30,11 @@ export default function SettingsPage() {
   const [form, setForm] = useState(defaults);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [accountMessage, setAccountMessage] = useState("");
+  const [accountSaving, setAccountSaving] = useState(false);
 
   useEffect(() => {
     if (!auth) return;
@@ -37,6 +43,7 @@ export default function SettingsPage() {
         window.location.href = "/admin/login";
         return;
       }
+      setAdminEmail(user.email || "");
       try {
         const snapshot = await getDoc(doc(db, "settings", "store"));
         if (snapshot.exists()) {
@@ -53,6 +60,42 @@ export default function SettingsPage() {
       }
     });
   }, []);
+
+  const saveAdminAccount = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!auth.currentUser) return;
+    if (!newEmail.trim() && !newPassword) {
+      setAccountMessage("Enter a new email, a new password, or both.");
+      return;
+    }
+    if (newPassword && newPassword.length < 6) {
+      setAccountMessage("Password must be at least 6 characters long.");
+      return;
+    }
+    setAccountSaving(true);
+    setAccountMessage("");
+    try {
+      if (newEmail.trim()) await updateEmail(auth.currentUser, newEmail.trim());
+      if (newPassword) await updatePassword(auth.currentUser, newPassword);
+      setAdminEmail(auth.currentUser.email || newEmail.trim());
+      setNewEmail("");
+      setNewPassword("");
+      setAccountMessage("Admin login details updated. Use the new credentials next time you sign in.");
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      const detail = code === "auth/requires-recent-login"
+        ? "For security, sign out and sign back in, then update the login details again."
+        : code === "auth/email-already-in-use"
+          ? "This email is already used by another account."
+          : code === "auth/invalid-email"
+            ? "Enter a valid email address."
+            : String((error as Error).message || error);
+      setAccountMessage(`Login details were not fully updated: ${detail}`);
+      setAdminEmail(auth.currentUser?.email || "");
+    } finally {
+      setAccountSaving(false);
+    }
+  };
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
@@ -80,6 +123,17 @@ export default function SettingsPage() {
         <h1>Settings</h1>
       </header>
       <section className="admin-content">
+        <section className="admin-account-settings">
+          <p className="eyebrow">ADMIN ACCOUNT</p>
+          <h2>Change email or password</h2>
+          <p className="admin-account-current">Current email: {adminEmail || "—"}</p>
+          {accountMessage && <p className="admin-notice admin-account-notice">{accountMessage}</p>}
+          <form className="admin-account-form" onSubmit={saveAdminAccount}>
+            <label>New email<input type="email" autoComplete="email" value={newEmail} onChange={(event) => setNewEmail(event.target.value)} /></label>
+            <label>New password<input type="password" autoComplete="new-password" minLength={6} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
+            <button className="button admin-account-submit" disabled={accountSaving}>{accountSaving ? "UPDATING LOGIN DETAILS…" : "SET CLIENT LOGIN DETAILS"}</button>
+          </form>
+        </section>
         <p className="eyebrow">STORE SETTINGS</p>
         {message && <p className="admin-notice">{message}</p>}
         <form className="admin-form" onSubmit={save}>

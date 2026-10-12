@@ -1975,6 +1975,62 @@ details p {
   letter-spacing: -0.07em;
   margin: 14px 0 8px;
 }
+.admin-account-settings {
+  margin: 0 0 38px;
+  padding: 28px;
+  background: #ebe9e5;
+}
+.admin-account-settings h2 {
+  margin: 18px 0 2px;
+  color: #51392f;
+  font-size: clamp(28px, 3vw, 38px);
+  letter-spacing: -0.065em;
+}
+.admin-account-current {
+  margin: 0 0 25px;
+  color: #777;
+  font-size: 14px;
+}
+.admin-account-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+}
+.admin-account-form label {
+  font: 10px "DM Mono";
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.admin-account-form input {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  margin-top: 9px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font: 15px Manrope;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.admin-account-submit {
+  grid-column: 1 / -1;
+  min-height: 56px;
+  padding: 15px 22px;
+  background: #5b4036;
+  color: #fff;
+  border: 0;
+  justify-content: flex-start;
+  font: 10px "DM Mono";
+  letter-spacing: 0.1em;
+}
+.admin-account-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.admin-account-notice {
+  margin-bottom: 18px;
+}
 .login-copy {
   font-size: 13px;
   color: #777;
@@ -3854,5 +3910,22 @@ details p {
   }
   .admin-login-card h1 {
     font-size: clamp(38px, 10vw, 46px);
+  }
+  .admin-account-settings {
+    margin-bottom: 30px;
+    padding: 20px 16px;
+  }
+  .admin-account-form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .admin-account-form label,
+  .admin-account-submit {
+    grid-column: 1;
+  }
+  .admin-account-form input,
+  .admin-account-submit {
+    min-height: 50px;
+    font-size: 14px;
   }
 }
