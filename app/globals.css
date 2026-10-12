@@ -2636,6 +2636,12 @@ details p {
   color: #666;
 }
 @media (max-width: 650px) {
+  .admin-orders-shortcut {
+    right: 12px;
+    bottom: 12px;
+    padding: 13px 16px;
+    font-size: 9px;
+  }
   .pwa-install {
     bottom: 14px;
     left: 14px;
@@ -3583,5 +3589,244 @@ details p {
   }
   .complaints-page {
     padding: 38px 5vw 80px;
+  }
+}
+@media (max-width: 650px) {
+  .admin-page {
+    overflow-x: hidden;
+  }
+  .admin-header {
+    height: auto;
+    min-height: 68px;
+    padding: 13px 5vw;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .admin-header h1 {
+    font-size: 23px;
+    margin: 4px 0 0;
+  }
+  .admin-header-actions {
+    width: 100%;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .admin-header-actions::-webkit-scrollbar,
+  .admin-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .admin-header-actions .button {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 10px 12px;
+  }
+  .admin-badge {
+    max-width: 52vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 8px;
+  }
+  .admin-nav {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    gap: 19px;
+    overflow-x: auto;
+    padding: 0 5vw;
+    background: var(--paper);
+    scrollbar-width: none;
+  }
+  .admin-nav a {
+    flex: 0 0 auto;
+    padding: 14px 0;
+    white-space: nowrap;
+  }
+  .admin-content {
+    min-width: 0;
+    padding: 29px 5vw 58px;
+  }
+  .admin-intro {
+    padding-bottom: 24px;
+    margin-bottom: 30px;
+  }
+  .admin-intro h1 {
+    font-size: clamp(34px, 10vw, 42px);
+  }
+  .admin-intro > div > p:last-child {
+    line-height: 1.6;
+  }
+  .admin-section {
+    padding-bottom: 35px;
+    margin-bottom: 35px;
+  }
+  .admin-section h2 {
+    font-size: 25px;
+  }
+  .admin-section-head .button,
+  .admin-content > .button {
+    min-height: 42px;
+  }
+  .admin-product {
+    grid-template-columns: 45px minmax(0, 1fr) 30px 30px;
+    gap: 9px;
+    padding: 11px 0;
+  }
+  .admin-product img {
+    width: 45px;
+    height: 58px;
+  }
+  .admin-product b {
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  .admin-product span {
+    font-size: 10px;
+  }
+  .admin-product button,
+  .category-admin-list button {
+    min-width: 32px;
+    min-height: 38px;
+  }
+  .admin-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .admin-form label,
+  .admin-form .wide,
+  .admin-form .submit-product {
+    grid-column: 1;
+    min-width: 0;
+    margin-bottom: 14px;
+  }
+  .admin-form input,
+  .admin-form select,
+  .admin-form textarea {
+    min-height: 46px;
+    font-size: 16px;
+  }
+  .admin-form textarea {
+    min-height: 110px;
+  }
+  .image-upload {
+    padding: 14px;
+  }
+  .image-inputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .image-input {
+    height: clamp(100px, 34vw, 140px);
+    min-width: 0;
+  }
+  .image-input input {
+    min-width: 0;
+    font-size: 11px;
+  }
+  .category-admin-list > div {
+    grid-template-columns: minmax(0, 1fr) 40px 38px;
+    gap: 6px;
+    align-items: center;
+    padding: 12px 0;
+    overflow-wrap: anywhere;
+  }
+  .coupon-manager h1 {
+    font-size: clamp(36px, 10vw, 48px);
+  }
+  .coupon-form {
+    padding: 16px;
+  }
+  .coupon-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 16px 0;
+  }
+  .coupon-row > div {
+    min-width: 60%;
+  }
+  .coupon-active {
+    margin-left: auto;
+  }
+  .delivery-areas-page {
+    padding-left: 5vw;
+    padding-right: 5vw;
+  }
+  .delivery-area-form,
+  .delivery-area-note {
+    padding: 16px;
+  }
+  .delivery-areas-head,
+  .delivery-areas-list article {
+    gap: 8px;
+    padding: 12px;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  .orders-dashboard {
+    padding-top: 25px;
+  }
+  .orders-heading h2 {
+    font-size: clamp(28px, 8vw, 38px);
+  }
+  .order-stats article {
+    padding: 13px;
+  }
+  .order-stats b {
+    font-size: 20px;
+  }
+  .order-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 12px 0 2px;
+    scrollbar-width: none;
+  }
+  .order-filters button {
+    flex: 0 0 auto;
+    min-height: 38px;
+    white-space: nowrap;
+  }
+  .orders-table {
+    overflow: hidden;
+  }
+  .order-row {
+    min-width: 0;
+    gap: 12px 8px;
+    overflow-wrap: anywhere;
+  }
+  .order-row > div,
+  .order-row > a,
+  .order-row > span {
+    min-width: 0;
+  }
+  .admin-complaint-list article {
+    padding: 16px;
+  }
+  .admin-complaint-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .complaint-admin-edit > div,
+  .complaint-admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .complaint-admin-edit select,
+  .complaint-admin-edit textarea {
+    width: 100%;
+    max-width: 100%;
+  }
+  .admin-login-card {
+    padding: 30px 23px;
+  }
+  .admin-login-card h1 {
+    font-size: clamp(38px, 10vw, 46px);
   }
 }
