@@ -397,6 +397,46 @@ input {
   padding: 22px;
   margin-bottom: 8px;
 }
+.hero-copy-settings {
+  padding: 22px;
+  background: #ebeae6;
+}
+.hero-copy-settings h2 {
+  margin: 0 0 17px;
+  font-size: 24px;
+}
+.hero-copy-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.hero-copy-fields .hero-copy-description {
+  grid-column: 1 / -1;
+}
+.hero-copy-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.admin-form .hero-copy-toggle input {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 0;
+  padding: 0;
+  accent-color: #65483e;
+}
+.hero-copy-fields textarea {
+  min-height: 95px;
+}
+.hero-copy-hidden-note {
+  margin: 16px 0 0;
+  color: #76584a;
+  font-size: 12px;
+}
 .hero-image-settings h2 {
   margin: 0 0 8px;
   font-size: 24px;
@@ -3927,5 +3967,16 @@ details p {
   .admin-account-submit {
     min-height: 50px;
     font-size: 14px;
+  }
+  .hero-copy-settings,
+  .hero-image-settings {
+    padding: 16px;
+  }
+  .hero-copy-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .hero-copy-fields .hero-copy-description {
+    grid-column: 1;
   }
 }

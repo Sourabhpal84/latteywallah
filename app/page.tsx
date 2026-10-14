@@ -32,6 +32,15 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [heroImages, setHeroImages] = useState({ desktop: "", mobile: "" });
+  const [heroCopy, setHeroCopy] = useState({
+    eyebrow: "THE EVERYDAY EDIT — 01",
+    title: "Everyday style.",
+    accent: "Elevated.",
+    description: "Thoughtful essentials for the way you live now. Designed in India, made to last.",
+    buttonText: "SHOP THE EDIT",
+    buttonLink: "#shop",
+    visible: true,
+  });
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [introVisible, setIntroVisible] = useState(false);
   const introStartedAt = useRef(Date.now());
@@ -62,6 +71,15 @@ export default function Home() {
       setHeroImages({
         desktop: typeof desktop === "string" ? desktop : "",
         mobile: typeof mobile === "string" ? mobile : "",
+      });
+      setHeroCopy({
+        eyebrow: typeof settings?.heroEyebrow === "string" ? settings.heroEyebrow : "THE EVERYDAY EDIT — 01",
+        title: typeof settings?.heroTitle === "string" ? settings.heroTitle : "Everyday style.",
+        accent: typeof settings?.heroAccent === "string" ? settings.heroAccent : "Elevated.",
+        description: typeof settings?.heroDescription === "string" ? settings.heroDescription : "Thoughtful essentials for the way you live now. Designed in India, made to last.",
+        buttonText: typeof settings?.heroButtonText === "string" ? settings.heroButtonText : "SHOP THE EDIT",
+        buttonLink: typeof settings?.heroButtonLink === "string" ? settings.heroButtonLink : "#shop",
+        visible: settings?.showHeroCopy !== false,
       });
     }),
     [],
@@ -262,21 +280,24 @@ export default function Home() {
           "--hero-mobile": heroImages.mobile ? `url("${heroImages.mobile.replaceAll('"', '%22')}")` : undefined,
         } as CSSProperties}
       >
-        <div className="hero-copy">
-          <p className="eyebrow">THE EVERYDAY EDIT — 01</p>
-          <h1>
-            Everyday style.
-            <br />
-            <i>Elevated.</i>
-          </h1>
-          <p className="hero-sub">
-            Thoughtful essentials for the way you live now. Designed in India,
-            made to last.
-          </p>
-          <a className="button button-light" href="#shop">
-            SHOP THE EDIT <ArrowRight size={16} />
-          </a>
-        </div>
+        {heroCopy.visible && (
+          <div className="hero-copy">
+            {heroCopy.eyebrow && <p className="eyebrow">{heroCopy.eyebrow}</p>}
+            {(heroCopy.title || heroCopy.accent) && (
+              <h1>
+                {heroCopy.title}
+                {heroCopy.title && heroCopy.accent && <br />}
+                {heroCopy.accent && <i>{heroCopy.accent}</i>}
+              </h1>
+            )}
+            {heroCopy.description && <p className="hero-sub">{heroCopy.description}</p>}
+            {heroCopy.buttonText && (
+              <a className="button button-light" href={heroCopy.buttonLink || "#shop"}>
+                {heroCopy.buttonText} <ArrowRight size={16} />
+              </a>
+            )}
+          </div>
+        )}
       </section>
       <section className="category-wrap" id="collections">
         <div className="section-head">

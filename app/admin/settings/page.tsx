@@ -14,6 +14,13 @@ type StoreSettings = {
   storeOpen: boolean;
   heroImageDesktop: string;
   heroImageMobile: string;
+  heroEyebrow: string;
+  heroTitle: string;
+  heroAccent: string;
+  heroDescription: string;
+  heroButtonText: string;
+  heroButtonLink: string;
+  showHeroCopy: boolean;
 };
 
 const defaults: StoreSettings = {
@@ -24,6 +31,13 @@ const defaults: StoreSettings = {
   storeOpen: true,
   heroImageDesktop: "",
   heroImageMobile: "",
+  heroEyebrow: "THE EVERYDAY EDIT — 01",
+  heroTitle: "Everyday style.",
+  heroAccent: "Elevated.",
+  heroDescription: "Thoughtful essentials for the way you live now. Designed in India, made to last.",
+  heroButtonText: "SHOP THE EDIT",
+  heroButtonLink: "#shop",
+  showHeroCopy: true,
 };
 
 export default function SettingsPage() {
@@ -53,6 +67,13 @@ export default function SettingsPage() {
             ...(data as Partial<StoreSettings>),
             heroImageDesktop: String(data.heroImageDesktop || data.heroImage || ""),
             heroImageMobile: String(data.heroImageMobile || ""),
+            heroEyebrow: typeof data.heroEyebrow === "string" ? data.heroEyebrow : defaults.heroEyebrow,
+            heroTitle: typeof data.heroTitle === "string" ? data.heroTitle : defaults.heroTitle,
+            heroAccent: typeof data.heroAccent === "string" ? data.heroAccent : defaults.heroAccent,
+            heroDescription: typeof data.heroDescription === "string" ? data.heroDescription : defaults.heroDescription,
+            heroButtonText: typeof data.heroButtonText === "string" ? data.heroButtonText : defaults.heroButtonText,
+            heroButtonLink: typeof data.heroButtonLink === "string" ? data.heroButtonLink : defaults.heroButtonLink,
+            showHeroCopy: data.showHeroCopy !== false,
           }));
         }
       } catch (error) {
@@ -152,7 +173,7 @@ export default function SettingsPage() {
             </label>
             {form.heroImageDesktop ? (
               <div className="hero-image-preview" style={{ backgroundImage: `linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.05)), url("${form.heroImageDesktop.replaceAll('"', '%22')}")` }}>
-                <span>Everyday style. <i>Elevated.</i></span>
+                <span>{form.heroTitle} <i>{form.heroAccent}</i></span>
               </div>
             ) : <p className="hero-image-empty">Current default hero image will be used until you add a desktop URL.</p>}
             <label>
@@ -166,9 +187,26 @@ export default function SettingsPage() {
             </label>
             {form.heroImageMobile && (
               <div className="hero-image-preview hero-image-preview-mobile" style={{ backgroundImage: `linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.05)), url("${form.heroImageMobile.replaceAll('"', '%22')}")` }}>
-                <span>Everyday style. <i>Elevated.</i></span>
+                <span>{form.heroTitle} <i>{form.heroAccent}</i></span>
               </div>
             )}
+          </section>
+          <section className="hero-copy-settings wide">
+            <p className="eyebrow">HERO TEXT & BUTTON</p>
+            <h2>Homepage message</h2>
+            <label className="hero-copy-toggle">
+              <input type="checkbox" checked={form.showHeroCopy} onChange={(event) => setForm({ ...form, showHeroCopy: event.target.checked })} />
+              Show all hero text and button
+            </label>
+            <div className="hero-copy-fields">
+              <label>Small heading<input value={form.heroEyebrow} onChange={(event) => setForm({ ...form, heroEyebrow: event.target.value })} /></label>
+              <label>Main heading<input value={form.heroTitle} onChange={(event) => setForm({ ...form, heroTitle: event.target.value })} /></label>
+              <label>Italic heading<input value={form.heroAccent} onChange={(event) => setForm({ ...form, heroAccent: event.target.value })} /></label>
+              <label>Button text<input value={form.heroButtonText} onChange={(event) => setForm({ ...form, heroButtonText: event.target.value })} /></label>
+              <label className="hero-copy-description">Description<textarea value={form.heroDescription} onChange={(event) => setForm({ ...form, heroDescription: event.target.value })} /></label>
+              <label>Button link<input value={form.heroButtonLink} placeholder="#shop or https://example.com" onChange={(event) => setForm({ ...form, heroButtonLink: event.target.value })} /></label>
+            </div>
+            {!form.showHeroCopy && <p className="hero-copy-hidden-note">Hero text and button are hidden on the storefront. The background image remains visible.</p>}
           </section>
           <label>Store name<input value={form.storeName} onChange={(event) => setForm({ ...form, storeName: event.target.value })} /></label>
           <label>Support phone<input value={form.supportPhone} onChange={(event) => setForm({ ...form, supportPhone: event.target.value })} /></label>
