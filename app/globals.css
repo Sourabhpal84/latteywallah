@@ -372,9 +372,10 @@ input {
   display: none;
 }
 .hero {
-  height: calc(100vh - 119px);
-  min-height: 580px;
-  max-height: 800px;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 16 / 9;
   background-color: #171717;
   background-image:
     linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.05)),
