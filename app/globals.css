@@ -1103,7 +1103,11 @@ footer {
     gap: 10px;
   }
   .hero {
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
     min-height: 630px;
+    aspect-ratio: auto;
     padding: 50px 7vw;
   }
   .hero-image-layer.has-mobile-image .hero-desktop-image {
