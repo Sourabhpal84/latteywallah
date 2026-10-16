@@ -403,11 +403,16 @@ input {
   z-index: 0;
 }
 .hero-image-layer img {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
   object-position: center;
+}
+.hero-image-layer .hero-mobile-image {
+  display: none;
 }
 .hero::before {
   content: "";
@@ -1100,6 +1105,12 @@ footer {
   .hero {
     min-height: 630px;
     padding: 50px 7vw;
+  }
+  .hero-image-layer.has-mobile-image .hero-desktop-image {
+    display: none;
+  }
+  .hero-image-layer.has-mobile-image .hero-mobile-image {
+    display: block;
   }
   .hero h1 {
     font-size: 58px;

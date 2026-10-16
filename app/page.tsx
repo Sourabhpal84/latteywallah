@@ -276,24 +276,33 @@ export default function Home() {
         className="hero"
         id="top"
       >
-        <picture className="hero-image-layer" aria-hidden="true">
-          {heroImages.mobile && <source media="(max-width: 767px)" srcSet={heroImages.mobile} />}
+        <div className={`hero-image-layer${heroImages.mobile ? " has-mobile-image" : ""}`} aria-hidden="true">
           <img
+            className="hero-desktop-image"
             src={heroImages.desktop || "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=max&w=2200&q=90"}
             alt=""
             fetchPriority="high"
             onError={(event) => {
               const image = event.currentTarget;
               const defaultImage = "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=max&w=2200&q=90";
-              if (heroImages.mobile && image.currentSrc !== image.src) {
-                image.parentElement?.querySelector("source")?.removeAttribute("srcset");
-                image.src = heroImages.desktop || defaultImage;
-              } else if (image.src !== defaultImage) {
+              if (image.src !== defaultImage) {
                 image.src = defaultImage;
               }
             }}
           />
-        </picture>
+          {heroImages.mobile && (
+            <img
+              className="hero-mobile-image"
+              src={heroImages.mobile}
+              alt=""
+              fetchPriority="high"
+              onError={(event) => {
+                event.currentTarget.parentElement?.classList.remove("has-mobile-image");
+                event.currentTarget.remove();
+              }}
+            />
+          )}
+        </div>
         {heroCopy.visible && (
           <div className="hero-copy">
             {heroCopy.eyebrow && <p className="eyebrow">{heroCopy.eyebrow}</p>}
