@@ -1699,7 +1699,7 @@ details p {
     margin-top: 25px;
   }
   .admin-product {
-    grid-template-columns: 48px minmax(0, 1fr) 25px 25px;
+    grid-template-columns: 48px minmax(0, 1fr) repeat(4, 25px);
   }
   .admin-product img {
     width: 48px;
@@ -1757,6 +1757,7 @@ details p {
     margin-top: 65px;
   }
 }
+
 .checkout-page,
 .order-page {
   min-height: 100vh;
@@ -3979,5 +3980,439 @@ details p {
   }
   .hero-copy-fields .hero-copy-description {
     grid-column: 1;
+  }
+}
+
+@media (max-width: 650px) {
+  html,
+  body {
+    width: 100%;
+    overflow-x: clip;
+  }
+  img,
+  video,
+  iframe {
+    max-width: 100%;
+  }
+  input,
+  select,
+  textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .announcement {
+    padding: 9px 12px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+  }
+  .header {
+    height: 64px;
+    padding: 0 12px;
+    gap: 5px;
+  }
+  .header .mobile-only {
+    width: 28px;
+    flex: 0 0 28px;
+    padding: 2px;
+  }
+  .header .mobile-only svg {
+    width: 20px;
+    height: 20px;
+  }
+  .header .logo {
+    gap: 5px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  .header .brand-mark {
+    width: 22px;
+    height: 22px;
+  }
+  .header .actions {
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+  .header .actions .icon,
+  .header .actions .bag {
+    padding: 3px;
+  }
+  .header .actions .icon svg,
+  .header .actions .bag svg {
+    width: 17px;
+    height: 17px;
+  }
+  .nav.nav-open {
+    top: 64px;
+    padding: 20px 5vw;
+  }
+  .hero {
+    min-height: 630px;
+    padding: 48px 7vw;
+  }
+  .hero-copy {
+    width: 100%;
+    max-width: 100%;
+  }
+  .hero h1 {
+    max-width: 100%;
+    font-size: clamp(42px, 13vw, 58px);
+    overflow-wrap: anywhere;
+  }
+  .hero-sub {
+    max-width: 32ch;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .hero .button {
+    min-height: 48px;
+    max-width: 100%;
+  }
+  .category-wrap,
+  .shop {
+    padding-top: 65px;
+  }
+  .category-card {
+    height: clamp(160px, 48vw, 220px);
+  }
+  .category-card div {
+    padding: 12px;
+    gap: 8px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+  .section-head h2,
+  .intro h2,
+  .manifesto h2,
+  .newsletter h2 {
+    font-size: clamp(32px, 10vw, 46px);
+  }
+  .shop-tools {
+    gap: 12px;
+  }
+  .search {
+    min-width: 0;
+    flex: 1;
+  }
+  .search input {
+    width: 100%;
+    min-width: 0;
+  }
+  .filter {
+    flex: 0 0 auto;
+  }
+  .chips {
+    gap: 19px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .product-card,
+  .product-meta,
+  .product-meta > div {
+    min-width: 0;
+  }
+  .product-meta h3 {
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  .product-meta p {
+    overflow-wrap: anywhere;
+  }
+  .quick-add {
+    min-height: 38px;
+  }
+  .cart {
+    padding: 22px 18px;
+  }
+  .cart-item {
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .cart-item img {
+    width: 58px;
+    height: 72px;
+  }
+  .cart-item b {
+    overflow-wrap: anywhere;
+  }
+  .detail-header {
+    min-height: 64px;
+    height: auto;
+    padding: 14px 5vw;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .detail-header .logo {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    gap: 5px;
+  }
+  .detail-grid {
+    padding: 20px 5vw 65px;
+  }
+  .main-image {
+    height: 112vw;
+    min-height: 300px;
+    max-height: 620px;
+  }
+  .gallery-arrow {
+    width: 34px;
+    height: 38px;
+  }
+  .gallery-arrow.prev {
+    left: 8px;
+  }
+  .gallery-arrow.next {
+    right: 8px;
+  }
+  .thumbs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .thumbs button {
+    height: clamp(58px, 20vw, 95px);
+  }
+  .product-info h1 {
+    font-size: clamp(38px, 12vw, 56px);
+  }
+  .product-info {
+    max-width: none;
+    min-width: 0;
+  }
+  .detail-description,
+  .product-info p {
+    overflow-wrap: anywhere;
+  }
+  .option-buttons button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .detail-actions {
+    gap: 6px;
+  }
+  .detail-actions .button {
+    min-height: 48px;
+    padding: 12px 10px;
+    font-size: 8px;
+  }
+  .checkout-grid,
+  .food-checkout {
+    padding: 30px 5vw 70px;
+  }
+  .checkout-grid h1,
+  .food-checkout h1 {
+    font-size: clamp(38px, 12vw, 54px);
+    overflow-wrap: anywhere;
+  }
+  .checkout-form input,
+  .checkout-form select,
+  .checkout-form textarea,
+  .profile-form input,
+  .profile-form textarea,
+  .login-form input,
+  .admin-form input,
+  .admin-form select,
+  .admin-form textarea,
+  .complaint-form input,
+  .complaint-form select,
+  .complaint-form textarea {
+    font-size: 16px;
+  }
+  .summary,
+  .food-checkout .summary {
+    padding: 18px 15px;
+    min-width: 0;
+  }
+  .summary-line {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 9px;
+  }
+  .summary-line img {
+    width: 48px;
+    height: 58px;
+  }
+  .summary-line b,
+  .summary-line span {
+    overflow-wrap: anywhere;
+  }
+  .order-card {
+    margin: 48px auto;
+  }
+  .order-card h1 {
+    font-size: clamp(42px, 13vw, 60px);
+  }
+  .order-payment {
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 30px 0;
+  }
+  .service-modal {
+    width: 100%;
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    padding: 28px 22px;
+  }
+  .orders-page-heading h1 {
+    font-size: clamp(36px, 11vw, 52px);
+  }
+  .customer-order-main,
+  .customer-order-main > div:first-child {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .customer-order-main p {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .customer-order-summary,
+  .tracking-card,
+  .customer-items,
+  .delivery-card,
+  .detail-grid-admin > section {
+    min-width: 0;
+    padding: 17px;
+  }
+  .detail-items article,
+  .customer-items article {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .detail-items img,
+  .customer-items img {
+    width: 42px;
+    height: 50px;
+  }
+  .detail-items article > *,
+  .customer-items article > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .admin-order-detail section {
+    padding: 17px;
+  }
+  .admin-detail-line {
+    gap: 12px;
+    align-items: start;
+  }
+  .admin-detail-line > :last-child {
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .order-actions {
+    padding: 13px;
+  }
+  .order-actions .button {
+    min-height: 42px;
+  }
+  .delivery-areas-head,
+  .delivery-areas-list article {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    overflow-wrap: anywhere;
+  }
+  .delivery-areas-head span:last-child,
+  .delivery-areas-list article div {
+    grid-column: 1;
+    justify-content: flex-start;
+  }
+  .delivery-areas-list article div {
+    flex-wrap: wrap;
+  }
+  .delivery-areas-list article button {
+    min-height: 38px;
+  }
+  .tax-rate-form,
+  .delivery-area-form,
+  .delivery-area-note {
+    min-width: 0;
+    padding: 16px;
+  }
+  .profile-form {
+    max-width: none;
+  }
+  .account-content,
+  .complaints-page,
+  .policy-content {
+    padding-top: 38px;
+    padding-bottom: 70px;
+  }
+  .account-content h1,
+  .complaints-intro h1 {
+    font-size: clamp(38px, 12vw, 56px);
+  }
+  .address-card {
+    flex-direction: column;
+    padding: 16px;
+  }
+  .address-card > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .address-card button {
+    min-height: 38px;
+  }
+  .account-dashboard > a,
+  .account-dashboard > button {
+    grid-template-columns: 24px minmax(0, 1fr) 18px;
+    padding: 15px;
+  }
+  .complaint-form,
+  .complaint-help,
+  .complaint-history article,
+  .admin-complaint-list article,
+  .cancel-order-card {
+    min-width: 0;
+    padding: 16px;
+  }
+  .complaint-history article > div:first-child {
+    min-width: 0;
+  }
+  .complaint-history article > div:first-child > div:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .complaint-status {
+    overflow-wrap: anywhere;
+  }
+  .support-contact {
+    padding: 17px;
+    overflow-wrap: anywhere;
+  }
+  .policy-content h1 {
+    font-size: clamp(40px, 12vw, 58px);
+    overflow-wrap: anywhere;
+  }
+  .footer-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .footer-links > div {
+    min-width: 0;
+  }
+  .newsletter {
+    padding: 70px 7vw;
+  }
+  .newsletter form {
+    min-width: 0;
+  }
+  .email-row {
+    gap: 8px;
+  }
+  .email-row button {
+    white-space: nowrap;
+    font-size: 9px;
+  }
+  .toast-stack {
+    bottom: 14px;
+    z-index: 110;
+  }
+  .pwa-install {
+    bottom: 14px;
+    z-index: 100;
   }
 }
