@@ -282,6 +282,16 @@ export default function Home() {
             src={heroImages.desktop || "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=max&w=2200&q=90"}
             alt=""
             fetchPriority="high"
+            onError={(event) => {
+              const image = event.currentTarget;
+              const defaultImage = "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=max&w=2200&q=90";
+              if (heroImages.mobile && image.currentSrc !== image.src) {
+                image.parentElement?.querySelector("source")?.removeAttribute("srcset");
+                image.src = heroImages.desktop || defaultImage;
+              } else if (image.src !== defaultImage) {
+                image.src = defaultImage;
+              }
+            }}
           />
         </picture>
         {heroCopy.visible && (

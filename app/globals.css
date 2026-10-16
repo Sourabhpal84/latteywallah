@@ -400,7 +400,7 @@ input {
   position: absolute;
   inset: 0;
   display: block;
-  z-index: -2;
+  z-index: 0;
 }
 .hero-image-layer img {
   display: block;
@@ -413,13 +413,13 @@ input {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.05));
   pointer-events: none;
 }
 .hero-copy {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   max-width: 590px;
 }
 .hero-image-settings {
@@ -551,6 +551,7 @@ h2 i {
   bottom: 35px;
   left: 8vw;
   right: 8vw;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   font:
