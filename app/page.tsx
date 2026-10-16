@@ -1,6 +1,6 @@
 "use client";
 
-import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Heart,
@@ -275,11 +275,15 @@ export default function Home() {
       <section
         className="hero"
         id="top"
-        style={{
-          "--hero-desktop": heroImages.desktop ? `url("${heroImages.desktop.replaceAll('"', '%22')}")` : undefined,
-          "--hero-mobile": heroImages.mobile ? `url("${heroImages.mobile.replaceAll('"', '%22')}")` : undefined,
-        } as CSSProperties}
       >
+        <picture className="hero-image-layer" aria-hidden="true">
+          {heroImages.mobile && <source media="(max-width: 767px)" srcSet={heroImages.mobile} />}
+          <img
+            src={heroImages.desktop || "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=max&w=2200&q=90"}
+            alt=""
+            fetchPriority="high"
+          />
+        </picture>
         {heroCopy.visible && (
           <div className="hero-copy">
             {heroCopy.eyebrow && <p className="eyebrow">{heroCopy.eyebrow}</p>}
