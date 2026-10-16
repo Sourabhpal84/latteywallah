@@ -146,7 +146,7 @@ export default function AdminCategoriesPage() {
           <ArrowLeft size={16} /> ADMIN
         </Link>
         <div className="logo">
-          LATTEY <span>WALA</span>
+          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span>
         </div>
         <span className="admin-badge">CATEGORY MANAGER</span>
       </header>

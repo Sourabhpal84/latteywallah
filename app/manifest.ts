@@ -11,9 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: '#f5f4f1',
     theme_color: '#111111',
     icons: [
-      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/icons/lattey-wala-logo.png', sizes: 'any', type: 'image/png', purpose: 'any' },
+      { src: '/icons/lattey-wala-logo.png', sizes: 'any', type: 'image/png', purpose: 'maskable' },
     ],
   }
 }

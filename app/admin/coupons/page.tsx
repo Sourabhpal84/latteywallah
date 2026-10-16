@@ -106,7 +106,7 @@ export default function AdminCouponsPage() {
     <main className="admin-page">
       <header className="admin-header">
         <Link href="/admin" className="back-link"><ArrowLeft size={16} /> ADMIN</Link>
-        <div className="logo">LATTEY <span>WALA</span></div>
+        <div className="logo"><span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span></div>
         <span className="admin-badge">COUPON MANAGER</span>
       </header>
       <section className="admin-content coupon-manager">

@@ -208,7 +208,7 @@ export default function Home() {
             <span className="welcome-orbit welcome-orbit-two" />
             <img
               className="welcome-mark"
-              src="/icons/lattey-walla-wolf-source.png"
+              src="/icons/lattey-wala-logo.png"
               alt=""
             />
             <p className="welcome-kicker">A LITTLE MORE YOU</p>
@@ -235,8 +235,8 @@ export default function Home() {
           <a href="#about">ABOUT</a>
         </nav>
         <a className="logo" href="#top">
-          <img className="brand-mark" src="/icons/lattey-walla-wolf-source.png" alt="" />
-          LATTEY <span>WALA</span>
+          
+          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span>
         </a>
         <div className="actions">
           <button
@@ -445,8 +445,8 @@ export default function Home() {
       <footer className="footer" id="about">
         <div className="footer-brand">
           <a className="logo" href="#top">
-            <img className="brand-mark" src="/icons/lattey-walla-wolf-source.png" alt="" />
-            LATTEY <span>WALA</span>
+            
+            <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span>
           </a>
           <p>Everyday style. Elevated.</p>
           <p className="footer-company">LATTEYWALA GARMENTS CONCAVE PVT. LTD.</p>

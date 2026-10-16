@@ -130,7 +130,7 @@ export default function AccountLoginPage() {
     <main className="admin-login customer-login">
       <div className="admin-login-card">
         <Link href="/" className="back-link"><ArrowLeft size={15} /> BACK TO STORE</Link>
-        <div className="logo">LATTEY <span>WALA</span></div>
+        <div className="logo"><span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span></div>
         <p className="eyebrow">YOUR ACCOUNT</p>
         <h1>{mode === "signup" ? "Create account." : "Welcome back."}</h1>
         <p className="login-copy">{mode === "otp" ? "Sign in or create your customer account with a one-time code." : mode === "signup" ? "Create an account to save your address and track orders." : "Sign in to track orders and continue checkout."}</p>
