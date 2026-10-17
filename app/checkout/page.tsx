@@ -359,7 +359,7 @@ export default function CheckoutPage() {
             <ArrowLeft size={16} /> BROWSE MENU
           </Link>
           <Link href="/" className="logo">
-            <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span>
+            <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.jpg" alt="" /></span> LATTEY <span>WALA</span>
           </Link>
           <span className="eyebrow">CHECKOUT</span>
         </header>
@@ -380,7 +380,7 @@ export default function CheckoutPage() {
           <ArrowLeft size={16} /> BROWSE MENU
         </Link>
         <Link href="/" className="logo">
-          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span>
+          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.jpg" alt="" /></span> LATTEY <span>WALA</span>
         </Link>
         <span className="eyebrow">CART → DELIVERY → PAYMENT</span>
       </header>

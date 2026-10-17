@@ -148,7 +148,7 @@ export default function AdminOrderDetail({
           <ArrowLeft size={16} /> ORDERS
         </Link>
         <div className="logo">
-          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span>
+          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.jpg" alt="" /></span> LATTEY <span>WALA</span>
         </div>
         <StatusBadge status={current} />
       </header>

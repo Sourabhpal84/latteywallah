@@ -123,7 +123,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
           <ArrowLeft size={16} /> BACK TO SHOP
         </Link>
         <Link href="/" className="logo">
-          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span>
+          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.jpg" alt="" /></span> LATTEY <span>WALA</span>
         </Link>
         <Link
           href="/checkout"

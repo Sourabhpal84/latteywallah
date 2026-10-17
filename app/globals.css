@@ -26,14 +26,26 @@
   text-align: center;
   animation: welcome-content-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.welcome-mark {
+.welcome-mark-frame {
   position: relative;
   z-index: 1;
   width: 94px;
   height: 94px;
-  object-fit: contain;
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #fff;
   margin-bottom: 25px;
   animation: welcome-mark-float 2.6s ease-in-out infinite;
+}
+.welcome-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 85%;
+  height: 85%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
 }
 .welcome-kicker {
   margin: 0 0 13px;
@@ -326,19 +338,19 @@ input {
   gap: 9px;
 }
 .brand-mark-frame {
-  width: 32px;
+  width: 34px;
   height: 34px;
   flex: 0 0 auto;
   display: inline-block;
   position: relative;
   overflow: hidden;
+  border-radius: 50%;
   background: #fff;
 }
 .brand-mark {
   position: absolute;
-  width: 80px;
-  height: 80px;
-  max-width: none;
+  width: 85%;
+  height: 85%;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
@@ -869,11 +881,7 @@ footer {
 }
 .footer-brand .brand-mark-frame {
   width: 40px;
-  height: 42px;
-}
-.footer-brand .brand-mark {
-  width: 98px;
-  height: 98px;
+  height: 40px;
 }
 .footer-brand p {
   color: #999;
@@ -2768,10 +2776,18 @@ details p {
 .pwa-icon {
   width: 38px;
   height: 38px;
-  background: #111;
-  color: #fff;
-  display: grid;
-  place-items: center;
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #fff;
+  flex: 0 0 auto;
+}
+.pwa-icon img {
+  display: block;
+  width: 85%;
+  height: 85%;
+  margin: 7.5%;
+  object-fit: contain;
 }
 .pwa-install b {
   font-size: 13px;
@@ -4073,12 +4089,8 @@ details p {
     white-space: nowrap;
   }
   .header .brand-mark-frame {
-    width: 27px;
-    height: 29px;
-  }
-  .header .brand-mark {
-    width: 68px;
-    height: 68px;
+    width: 30px;
+    height: 30px;
   }
   .header .actions {
     flex: 0 0 auto;

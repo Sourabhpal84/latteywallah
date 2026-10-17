@@ -206,11 +206,9 @@ export default function Home() {
           <div className="welcome-intro-content">
             <span className="welcome-orbit welcome-orbit-one" />
             <span className="welcome-orbit welcome-orbit-two" />
-            <img
-              className="welcome-mark"
-              src="/icons/lattey-wala-logo.png"
-              alt=""
-            />
+            <span className="welcome-mark-frame">
+              <img className="welcome-mark" src="/icons/lattey-wala-logo.jpg" alt="" />
+            </span>
             <p className="welcome-kicker">A LITTLE MORE YOU</p>
             <h1>LATTEY <span>WALA</span></h1>
             <p className="welcome-tagline">Everyday style. Elevated.</p>
@@ -236,7 +234,7 @@ export default function Home() {
         </nav>
         <a className="logo" href="#top">
           
-          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span>
+          <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.jpg" alt="" /></span> LATTEY <span>WALA</span>
         </a>
         <div className="actions">
           <button
@@ -469,7 +467,7 @@ export default function Home() {
         <div className="footer-brand">
           <a className="logo" href="#top">
             
-            <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.png" alt="" /></span> LATTEY <span>WALA</span>
+            <span className="brand-mark-frame"><img className="brand-mark" src="/icons/lattey-wala-logo.jpg" alt="" /></span> LATTEY <span>WALA</span>
           </a>
           <p>Everyday style. Elevated.</p>
           <p className="footer-company">LATTEYWALA GARMENTS CONCAVE PVT. LTD.</p>
