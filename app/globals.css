@@ -164,6 +164,18 @@
   margin-top: 8px;
   font: 13px Manrope;
 }
+.delivery-area-form textarea {
+  display: block;
+  width: 100%;
+  min-height: 82px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  padding: 13px;
+  margin-top: 8px;
+  font: 13px Manrope;
+  text-transform: none;
+  letter-spacing: normal;
+}
 .delivery-area-form .button {
   margin-right: 8px;
 }
@@ -241,6 +253,34 @@
   display: flex;
   gap: 8px;
 }
+.delivery-area-seed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--line);
+  background: #faf9f6;
+}
+.delivery-area-seed > div,
+.delivery-areas-list article .delivery-area-location {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.delivery-area-seed .button {
+  flex-shrink: 0;
+}
+.delivery-area-seed span,
+.delivery-area-location small {
+  color: #777;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.delivery-area-location small {
+  overflow-wrap: anywhere;
+}
 .delivery-areas-list article button {
   border: 1px solid var(--line);
   background: #fff;
@@ -253,6 +293,14 @@
 @media (max-width: 800px) {
   .delivery-area-layout {
     grid-template-columns: 1fr;
+  }
+  .delivery-area-seed {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .delivery-area-seed .button {
+    width: 100%;
+    justify-content: space-between;
   }
   .delivery-areas-head,
   .delivery-areas-list article {

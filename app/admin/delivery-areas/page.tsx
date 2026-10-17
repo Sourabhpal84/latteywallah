@@ -9,14 +9,19 @@ import {
   doc,
   onSnapshot,
   setDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { normalizePincode } from "@/lib/commerce";
+import { seedDeliveryAreas } from "@/lib/seed-delivery-areas";
 import { useToast } from "@/components/toast";
 
 type Area = {
   id: string;
   pincode: string;
+  city?: string;
+  state?: string;
+  locality?: string;
   deliveryCharge: number;
   freeDeliveryAbove?: number | null;
 };
@@ -25,11 +30,15 @@ export default function DeliveryAreasPage() {
   const [areas, setAreas] = useState<Area[]>([]);
   const [form, setForm] = useState({
     pincode: "",
-    deliveryCharge: "",
-    freeDeliveryAbove: "",
+    city: "",
+    state: "",
+    locality: "",
+    deliveryCharge: "99",
+    freeDeliveryAbove: "1999",
   });
   const [editing, setEditing] = useState("");
   const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [taxRate, setTaxRate] = useState("0");
   const [taxSaving, setTaxSaving] = useState(false);
   useEffect(() => {
@@ -116,6 +125,9 @@ export default function DeliveryAreasPage() {
         doc(db, "serviceAreas", pincode),
         {
           pincode,
+          city: form.city.trim(),
+          state: form.state.trim(),
+          locality: form.locality.trim(),
           deliveryCharge,
           freeDeliveryAbove,
           enabled: true,
@@ -123,7 +135,7 @@ export default function DeliveryAreasPage() {
         },
         { merge: true },
       );
-      setForm({ pincode: "", deliveryCharge: "", freeDeliveryAbove: "" });
+      setForm({ pincode: "", city: "", state: "", locality: "", deliveryCharge: "99", freeDeliveryAbove: "1999" });
       setEditing("");
       notify({
         kind: "success",
@@ -140,11 +152,41 @@ export default function DeliveryAreasPage() {
     setEditing(area.id);
     setForm({
       pincode: area.pincode,
+      city: area.city || "",
+      state: area.state || "",
+      locality: area.locality || "",
       deliveryCharge: String(area.deliveryCharge),
       freeDeliveryAbove: area.freeDeliveryAbove
         ? String(area.freeDeliveryAbove)
         : "",
     });
+  };
+  const addProvidedPincodes = async () => {
+    if (seeding) return;
+    setSeeding(true);
+    try {
+      const batch = writeBatch(db);
+      const updatedAt = new Date().toISOString();
+      for (const area of seedDeliveryAreas) {
+        batch.set(doc(db, "serviceAreas", area.pincode), {
+          ...area,
+          deliveryCharge: 99,
+          freeDeliveryAbove: 1999,
+          enabled: true,
+          updatedAt,
+        }, { merge: true });
+      }
+      await batch.commit();
+      notify({
+        kind: "success",
+        title: `${seedDeliveryAreas.length} listed pincodes added`,
+        message: "Each has ₹99 delivery and free delivery from ₹1,999.",
+      });
+    } catch {
+      notify({ kind: "error", title: "Unable to add the listed pincodes" });
+    } finally {
+      setSeeding(false);
+    }
   };
   const remove = async (area: Area) => {
     if (
@@ -212,6 +254,18 @@ export default function DeliveryAreasPage() {
               />
             </label>
             <label>
+              City
+              <input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} placeholder="Example: Noida" />
+            </label>
+            <label>
+              State
+              <input value={form.state} onChange={(event) => setForm({ ...form, state: event.target.value })} placeholder="Example: Uttar Pradesh" />
+            </label>
+            <label className="wide">
+              Covered areas (optional)
+              <textarea value={form.locality} onChange={(event) => setForm({ ...form, locality: event.target.value })} placeholder="Sectors, neighbourhoods, post office" />
+            </label>
+            <label>
               Delivery charge (₹)
               <input
                 required
@@ -251,8 +305,11 @@ export default function DeliveryAreasPage() {
                   setEditing("");
                   setForm({
                     pincode: "",
-                    deliveryCharge: "",
-                    freeDeliveryAbove: "",
+                    city: "",
+                    state: "",
+                    locality: "",
+                    deliveryCharge: "99",
+                    freeDeliveryAbove: "1999",
                   });
                 }}
               >
@@ -296,15 +353,27 @@ export default function DeliveryAreasPage() {
         </form>
         <div className="delivery-areas-list">
           <div className="delivery-areas-head">
-            <span>PINCODE</span>
+            <span>AREA / PINCODE</span>
             <span>DELIVERY CHARGE</span>
             <span>FREE ABOVE</span>
             <span>ACTIONS</span>
           </div>
+          <div className="delivery-area-seed">
+            <div>
+              <b>Quick add the NCR list</b>
+              <span>{seedDeliveryAreas.length} pincodes · ₹99 delivery · free above ₹1,999</span>
+            </div>
+            <button type="button" className="button button-dark" onClick={addProvidedPincodes} disabled={seeding}>
+              {seeding ? "ADDING…" : "ADD LISTED PINCODES"}
+            </button>
+          </div>
           {areas.length ? (
             areas.map((area) => (
               <article key={area.id}>
-                <b>{area.pincode}</b>
+                <div className="delivery-area-location">
+                  <b>{area.pincode}{area.city ? ` · ${area.city}` : ""}</b>
+                  {area.locality && <small>{area.locality}</small>}
+                </div>
                 <strong>
                   ₹{Number(area.deliveryCharge || 0).toLocaleString("en-IN")}
                 </strong>
