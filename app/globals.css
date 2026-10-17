@@ -2786,12 +2786,51 @@ details p {
 .toast-stack {
   position: fixed;
   right: 20px;
-  bottom: 20px;
+  bottom: 92px;
   z-index: 100;
   display: grid;
   gap: 10px;
   width: min(360px, calc(100vw - 40px));
   pointer-events: none;
+}
+.floating-cart {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 105;
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+  animation: cart-pop 0.28s cubic-bezier(.2, .8, .2, 1) both;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+.floating-cart:hover {
+  background: #52372f;
+  transform: translateY(-3px);
+}
+.floating-cart-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 23px;
+  height: 23px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--paper);
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  font: 10px "DM Mono";
+}
+@keyframes cart-pop {
+  from { opacity: 0; transform: translateY(14px) scale(0.82); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .toast {
   pointer-events: auto;
@@ -4577,8 +4616,14 @@ details p {
     font-size: 9px;
   }
   .toast-stack {
-    bottom: 14px;
+    bottom: calc(90px + env(safe-area-inset-bottom));
     z-index: 110;
+  }
+  .floating-cart {
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(18px, env(safe-area-inset-bottom));
+    width: 56px;
+    height: 56px;
   }
   .pwa-install {
     bottom: 14px;
