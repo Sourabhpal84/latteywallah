@@ -1316,6 +1316,30 @@ footer {
   align-items: center;
   justify-content: space-between;
 }
+.product-cart-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: inherit;
+  border: 1px solid var(--line);
+}
+.product-cart-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  font: 10px Manrope;
+}
 .back-link {
   font: 10px "DM Mono";
   letter-spacing: 0.12em;
@@ -1929,7 +1953,7 @@ details p {
 }
 .summary-line {
   display: grid;
-  grid-template-columns: 55px 1fr auto;
+  grid-template-columns: 55px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid var(--line);
@@ -1939,7 +1963,10 @@ details p {
   width: 55px;
   height: 65px;
   object-fit: cover;
-  filter: grayscale(0.5);
+  filter: none;
+}
+.summary-line > * {
+  min-width: 0;
 }
 .summary-line b,
 .summary-line span {
@@ -1964,6 +1991,7 @@ details p {
 .summary-total p {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   font-size: 12px;
 }
 .summary-total .grand {
@@ -2477,7 +2505,14 @@ details p {
   }
   .food-checkout .summary {
     position: static;
-    order: 2;
+    order: -1;
+  }
+  .food-checkout,
+  .food-checkout > section,
+  .food-checkout .summary {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .checkout-form {
     display: block;
@@ -2802,6 +2837,16 @@ details p {
   margin: 3px 0 0;
   font-size: 10px;
   color: #c8c8c8;
+}
+.toast-action {
+  display: inline-flex;
+  margin-top: 9px;
+  padding: 8px 10px;
+  background: #fff;
+  color: #111;
+  text-decoration: none;
+  font: 9px "DM Mono";
+  letter-spacing: 0.08em;
 }
 .toast button {
   border: 0;

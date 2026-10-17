@@ -25,8 +25,10 @@ export default function ProductPage({ params }: { params: { id: string } }) {
   const [color, setColor] = useState("");
   const [size, setSize] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
+    setCartCount(readCart().reduce((total, line) => total + line.quantity, 0));
     const cached = getCachedProduct(params.id);
     setProduct(cached);
     setLoading(!cached);
@@ -105,12 +107,16 @@ export default function ProductPage({ params }: { params: { id: string } }) {
       price,
       sku: selected.sku,
     };
-    writeCart(addCartLine(readCart(), line));
+    const updatedCart = addCartLine(readCart(), line);
+    writeCart(updatedCart);
+    setCartCount(updatedCart.reduce((total, item) => total + item.quantity, 0));
     notify({
       kind: "success",
       title: "Added to cart",
       message: `${product.name} · ${size}`,
       image: gallery[0],
+      action: { label: "VIEW CART", href: "/checkout" },
+      durationMs: 6000,
     });
   };
   const openWhatsApp = () => {
@@ -136,6 +142,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
           aria-label="Open cart"
         >
           <ShoppingBag size={18} />
+          {cartCount > 0 && <b className="product-cart-count">{cartCount}</b>}
         </Link>
       </header>
       <div className="detail-grid">
