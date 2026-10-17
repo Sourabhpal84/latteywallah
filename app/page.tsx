@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowRight,
   Heart,
@@ -14,7 +15,7 @@ import {
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { Product } from "@/lib/products";
+import { cacheProductForNavigation, Product } from "@/lib/products";
 import { watchCatalog } from "@/lib/firestore-catalog";
 import { CategoryNode, descendantsOf } from "@/lib/category-tree";
 import { CART_UPDATED_EVENT, CartLine, readCart, writeCart } from "@/lib/cart";
@@ -41,7 +42,6 @@ export default function Home() {
     buttonLink: "#shop",
     visible: true,
   });
-  const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [introVisible, setIntroVisible] = useState(false);
   const introStartedAt = useRef(Date.now());
   const subcategoryRef = useRef<HTMLDivElement>(null);
@@ -89,54 +89,46 @@ export default function Home() {
       watchCatalog(
         (nextCatalog) => {
           setCatalog(nextCatalog);
-          setCatalogLoaded(true);
         },
         setCategoryNodes,
         (error) => {
           console.warn("Live catalog update failed:", error);
-          setCatalogLoaded(true);
         },
       ),
     [],
   );
   useEffect(() => {
     if (!introVisible) return;
-    const maxWait = window.setTimeout(() => setIntroVisible(false), 5500);
-    if (!catalogLoaded) return () => window.clearTimeout(maxWait);
-
-    let cancelled = false;
-    const imageUrls = [
-      ...catalog.map((product) => product.image),
-      ...categoryNodes.map((category) => category.image || ""),
-      heroImages.desktop,
-      heroImages.mobile,
-    ].filter((url): url is string => Boolean(url));
-    const preload = imageUrls.map(
-      (url) =>
-        new Promise<void>((resolve) => {
-          const image = new Image();
-          image.onload = () => resolve();
-          image.onerror = () => resolve();
-          image.src = url;
-          if (image.complete) resolve();
-          window.setTimeout(resolve, 4000);
-        }),
-    );
-    Promise.all(preload).then(() => {
-      if (cancelled) return;
-      const minimumIntro = 1500;
-      const remaining = Math.max(
-        0,
-        minimumIntro - (Date.now() - introStartedAt.current),
-      );
-      window.setTimeout(() => setIntroVisible(false), remaining);
-    });
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(maxWait);
+    let finishTimer: number | undefined;
+    let finished = false;
+    const minimumDuration = 1200;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      const remaining = Math.max(0, minimumDuration - (Date.now() - introStartedAt.current));
+      finishTimer = window.setTimeout(() => setIntroVisible(false), remaining);
     };
-  }, [introVisible, catalogLoaded, catalog, categoryNodes, heroImages]);
+    const maxWait = window.setTimeout(
+      () => setIntroVisible(false),
+      Math.max(0, 5500 - (Date.now() - introStartedAt.current)),
+    );
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    const imageUrl = isMobile
+      ? heroImages.mobile || heroImages.desktop
+      : heroImages.desktop || heroImages.mobile;
+    const image = new Image();
+    image.onload = finish;
+    image.onerror = finish;
+    if (imageUrl) image.src = imageUrl;
+    else finish();
+    if (image.complete) finish();
+    return () => {
+      window.clearTimeout(maxWait);
+      if (finishTimer) window.clearTimeout(finishTimer);
+      image.onload = null;
+      image.onerror = null;
+    };
+  }, [introVisible, heroImages]);
   const selected = categoryNodes.find(
     (category) => category.id === activeCategory,
   );
@@ -343,6 +335,8 @@ export default function Home() {
                   ""
                 }
                 alt={category.name}
+                loading="lazy"
+                decoding="async"
               />
               <div>
                 <span>{category.name.toUpperCase()}</span>
@@ -406,6 +400,8 @@ export default function Home() {
                         ""
                       }
                       alt={category.name}
+                      loading="lazy"
+                      decoding="async"
                     />
                     <div>
                       <span>{category.name.toUpperCase()}</span>
@@ -599,13 +595,14 @@ function ProductCard({
   const hasSizePricing = purchasableVariants.some(
     (variant) => variant.price !== product.price,
   );
+  const productHref = `/product/${product.id}`;
+  const cacheProduct = () => cacheProductForNavigation(product);
   return (
     <article className="product-card">
-      <div
-        className="product-image"
-        onClick={() => (window.location.href = `/product/${product.id}`)}
-      >
-        <img src={product.image} alt={product.name} />
+      <div className="product-image">
+        <Link className="product-image-link" href={productHref} onClick={cacheProduct} aria-label={`View ${product.name}`}>
+          <img src={product.image} alt={product.name} loading="lazy" decoding="async" />
+        </Link>
         <button
           className="wish"
           onClick={(event) => {
@@ -616,21 +613,19 @@ function ProductCard({
         >
           <Heart className={liked ? "filled" : ""} />
         </button>
-        <button
+        <Link
           className="quick-add"
-          onClick={(event) => {
-            event.stopPropagation();
-            window.location.href = `/product/${product.id}`;
-          }}
+          href={productHref}
+          onClick={cacheProduct}
         >
           ADD TO BAG <Plus size={14} />
-        </button>
+        </Link>
       </div>
       <div className="product-meta">
-        <div>
+        <Link className="product-meta-link" href={productHref} onClick={cacheProduct}>
           <h3>{product.name}</h3>
           <p>{product.category || product.color}</p>
-        </div>
+        </Link>
         <div className="price">
           <b>
             {hasSizePricing

@@ -63,3 +63,12 @@ export function watchCatalog(onProducts: (products: Product[]) => void, onCatego
   const stopCategories = onSnapshot(categoriesQuery, snapshot => onCategories(snapshot.docs.map(item => toCategory(item.id, item.data())).filter(item => item.active).sort((a, b) => a.sortOrder - b.sortOrder)), onError)
   return () => { stopProducts(); stopCategories() }
 }
+
+export function watchProduct(id: string, onProduct: (product: Product | null) => void, onError: (error: Error) => void) {
+  if (!firebaseConfigured) { onError(new Error('Firebase is not configured.')); return () => undefined }
+  return onSnapshot(doc(db, 'products', id), snapshot => {
+    if (!snapshot.exists()) return onProduct(null)
+    const data = snapshot.data()
+    onProduct(data.active === true && data.published !== false ? toProduct(snapshot.id, data) : null)
+  }, onError)
+}

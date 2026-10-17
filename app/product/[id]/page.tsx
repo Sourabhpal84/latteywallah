@@ -10,8 +10,8 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { watchCatalog } from "@/lib/firestore-catalog";
-import { Product, ProductVariant } from "@/lib/products";
+import { watchProduct } from "@/lib/firestore-catalog";
+import { getCachedProduct, Product, ProductVariant } from "@/lib/products";
 import { addCartLine, readCart, writeCart, CartLine } from "@/lib/cart";
 import { useToast } from "@/components/toast";
 
@@ -26,26 +26,31 @@ export default function ProductPage({ params }: { params: { id: string } }) {
   const [size, setSize] = useState("");
   const [quantity, setQuantity] = useState(1);
 
-  useEffect(
-    () =>
-      watchCatalog(
-        (catalog) => {
-          const next = catalog.find((item) => item.id === params.id) || null;
-          setProduct(next);
-          const first = next?.variants?.find(
-            (variant) => (variant.stock ?? 0) > 0,
-          );
-          if (first) {
-            setColor(first.color);
-            setSize(first.size);
-          }
-          setLoading(false);
-        },
-        () => undefined,
-        () => setLoading(false),
-      ),
-    [params.id],
-  );
+  useEffect(() => {
+    const cached = getCachedProduct(params.id);
+    setProduct(cached);
+    setLoading(!cached);
+    setImageIndex(0);
+    setColor("");
+    setSize("");
+
+    const applyProduct = (next: Product | null) => {
+      setProduct(next);
+      if (next) {
+        const first = next.variants?.find((variant) => (variant.stock ?? 0) > 0);
+        const colorOptions = next.colors?.length ? next.colors : [next.color];
+        setColor((current) => current && colorOptions.includes(current) ? current : first?.color || colorOptions[0] || "");
+        setSize((current) => current && next.sizes.includes(current) ? current : first?.size || next.sizes[0] || "");
+      }
+      setLoading(false);
+    };
+
+    if (cached) applyProduct(cached);
+    return watchProduct(params.id, applyProduct, (error) => {
+      console.warn("Product load failed:", error);
+      setLoading(false);
+    });
+  }, [params.id]);
 
   if (loading)
     return (
@@ -136,7 +141,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
       <div className="detail-grid">
         <div className="gallery">
           <div className="main-image">
-            <img src={gallery[imageIndex]} alt={product.name} />
+            <img src={gallery[imageIndex]} alt={product.name} fetchPriority="high" decoding="async" />
             <button
               className="gallery-arrow prev"
               onClick={() =>
@@ -161,7 +166,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                 key={`${image}-${index}`}
                 onClick={() => setImageIndex(index)}
               >
-                <img src={image} alt={`${product.name} view ${index + 1}`} />
+                <img src={image} alt={`${product.name} view ${index + 1}`} loading="lazy" decoding="async" />
               </button>
             ))}
           </div>
