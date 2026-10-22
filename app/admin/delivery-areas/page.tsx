@@ -183,7 +183,7 @@ export default function DeliveryAreasPage() {
           updatedAt,
         });
       }
-      const entries = [...updates.entries()];
+      const entries = Array.from(updates.entries());
       for (let start = 0; start < entries.length; start += 450) {
         const batch = writeBatch(db);
         for (const [pincode, data] of entries.slice(start, start + 450)) {
