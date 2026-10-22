@@ -209,7 +209,7 @@ export default function Home() {
         </div>
       )}
       <div className="announcement">
-        FREE SHIPPING ON ORDERS ABOVE ₹1,999 · EASY 7-DAY RETURNS
+        FREE SHIPPING ON ORDERS ABOVE ₹1,998 · EASY 7-DAY RETURNS
       </div>
       <header className="header">
         <button

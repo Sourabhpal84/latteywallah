@@ -27,7 +27,7 @@ const defaults: StoreSettings = {
   storeName: "LATTEY WALA",
   supportPhone: "",
   deliveryCharge: "99",
-  freeDeliveryThreshold: "1999",
+  freeDeliveryThreshold: "1998",
   storeOpen: true,
   heroImageDesktop: "",
   heroImageMobile: "",

@@ -34,7 +34,7 @@ export default function DeliveryAreasPage() {
     state: "",
     locality: "",
     deliveryCharge: "99",
-    freeDeliveryAbove: "1999",
+    freeDeliveryAbove: "1998",
   });
   const [editing, setEditing] = useState("");
   const [saving, setSaving] = useState(false);
@@ -135,7 +135,7 @@ export default function DeliveryAreasPage() {
         },
         { merge: true },
       );
-      setForm({ pincode: "", city: "", state: "", locality: "", deliveryCharge: "99", freeDeliveryAbove: "1999" });
+      setForm({ pincode: "", city: "", state: "", locality: "", deliveryCharge: "99", freeDeliveryAbove: "1998" });
       setEditing("");
       notify({
         kind: "success",
@@ -165,22 +165,36 @@ export default function DeliveryAreasPage() {
     if (seeding) return;
     setSeeding(true);
     try {
-      const batch = writeBatch(db);
       const updatedAt = new Date().toISOString();
+      const updates = new Map<string, Record<string, unknown>>();
+      for (const area of areas) {
+        updates.set(area.pincode, {
+          deliveryCharge: 99,
+          freeDeliveryAbove: 1998,
+          updatedAt,
+        });
+      }
       for (const area of seedDeliveryAreas) {
-        batch.set(doc(db, "serviceAreas", area.pincode), {
+        updates.set(area.pincode, {
           ...area,
           deliveryCharge: 99,
-          freeDeliveryAbove: 1999,
+          freeDeliveryAbove: 1998,
           enabled: true,
           updatedAt,
-        }, { merge: true });
+        });
       }
-      await batch.commit();
+      const entries = [...updates.entries()];
+      for (let start = 0; start < entries.length; start += 450) {
+        const batch = writeBatch(db);
+        for (const [pincode, data] of entries.slice(start, start + 450)) {
+          batch.set(doc(db, "serviceAreas", pincode), data, { merge: true });
+        }
+        await batch.commit();
+      }
       notify({
         kind: "success",
-        title: `${seedDeliveryAreas.length} listed pincodes added`,
-        message: "Each has ₹99 delivery and free delivery from ₹1,999.",
+        title: `${entries.length} pincodes updated`,
+        message: "Each has ₹99 delivery and free delivery from ₹1,998.",
       });
     } catch {
       notify({ kind: "error", title: "Unable to add the listed pincodes" });
@@ -309,7 +323,7 @@ export default function DeliveryAreasPage() {
                     state: "",
                     locality: "",
                     deliveryCharge: "99",
-                    freeDeliveryAbove: "1999",
+                    freeDeliveryAbove: "1998",
                   });
                 }}
               >
@@ -361,10 +375,10 @@ export default function DeliveryAreasPage() {
           <div className="delivery-area-seed">
             <div>
               <b>Quick add the NCR list</b>
-              <span>{seedDeliveryAreas.length} pincodes · ₹99 delivery · free above ₹1,999</span>
+              <span>{seedDeliveryAreas.length} pincodes · ₹99 delivery · free above ₹1,998</span>
             </div>
             <button type="button" className="button button-dark" onClick={addProvidedPincodes} disabled={seeding}>
-              {seeding ? "ADDING…" : "ADD LISTED PINCODES"}
+              {seeding ? "UPDATING…" : "SET ALL TO ₹99 / ₹1,998"}
             </button>
           </div>
           {areas.length ? (
