@@ -183,6 +183,10 @@ export default function ProductPage({ params }: { params: { id: string } }) {
             {product.category.toUpperCase()} / LATTEY WALA
           </p>
           <h1>{product.name}</h1>
+          <div className="product-rating product-detail-rating" aria-label="Rated 4 out of 5 stars">
+            <span aria-hidden="true">★★★★<i>★</i></span>
+            <b>4.0</b>
+          </div>
           <div className="detail-price">
             <b>{money(price)}</b>
             {product.mrp > price && <del>{money(product.mrp)}</del>}

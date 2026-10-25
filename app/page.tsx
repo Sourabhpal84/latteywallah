@@ -625,6 +625,10 @@ function ProductCard({
         <Link className="product-meta-link" href={productHref} onClick={cacheProduct}>
           <h3>{product.name}</h3>
           <p>{product.category || product.color}</p>
+          <div className="product-rating" aria-label="Rated 4 out of 5 stars">
+            <span aria-hidden="true">★★★★<i>★</i></span>
+            <b>4.0</b>
+          </div>
         </Link>
         <div className="price">
           <b>

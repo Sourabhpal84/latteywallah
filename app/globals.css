@@ -857,6 +857,32 @@ h2 i {
   color: #888;
   margin: 0;
 }
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+  color: #65483e;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+.product-rating i {
+  color: #c8c1bb;
+  font-style: normal;
+}
+.product-rating b {
+  color: #55504c;
+  font: 11px "DM Mono";
+  letter-spacing: 0;
+}
+.product-detail-rating {
+  margin-top: 13px;
+  font-size: 17px;
+}
+.product-detail-rating b {
+  font-size: 12px;
+}
 .price {
   display: flex;
   flex-direction: column;
