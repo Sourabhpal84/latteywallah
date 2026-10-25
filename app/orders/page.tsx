@@ -72,6 +72,7 @@ export default function OrdersPage() {
                 id: item.id,
                 ...(item.data() as Omit<Order, "id">),
               }))
+              .filter((order) => order.paymentStatus === "PAID")
               .sort((a, b) =>
                 String(b.createdAt).localeCompare(String(a.createdAt)),
               ),
@@ -120,12 +121,6 @@ export default function OrdersPage() {
             {orders.length === 1 ? "" : "s"}
           </span>
         </div>
-        {orders.some((order) => order.paymentStatus === "PENDING") && (
-          <p className="admin-notice">
-            A payment is being verified. Your order will confirm automatically
-            once Razorpay confirms it.
-          </p>
-        )}
         {loading ? (
           <div className="customer-orders-loading">
             <span />

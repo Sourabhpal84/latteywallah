@@ -102,7 +102,7 @@ export default function CheckoutPage() {
         writeCart([]);
         window.location.replace(`/order-success/${recovered.orderId}`);
       } catch {
-        // The checkout remains usable. The order is also shown as pending in My Orders.
+        // Keep checkout usable; recovery will create the order only after capture.
       }
     })();
     return () => {
@@ -262,6 +262,12 @@ export default function CheckoutPage() {
       const created = await createResponse.json();
       if (!createResponse.ok)
         throw new Error(created.error || "Unable to start payment");
+      if (created.alreadyPaid && created.internalOrderId) {
+        window.localStorage.removeItem(PENDING_PAYMENT_KEY);
+        writeCart([]);
+        window.location.href = `/order-success/${created.internalOrderId}`;
+        return;
+      }
       window.localStorage.setItem(
         PENDING_PAYMENT_KEY,
         JSON.stringify({
@@ -288,6 +294,23 @@ export default function CheckoutPage() {
           ondismiss: () => {
             paymentOpening.current = false;
             setProcessing(false);
+            void (async () => {
+              try {
+                const token = await auth.currentUser?.getIdToken();
+                if (!token) return;
+                await fetch("/api/razorpay/abandon", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ checkoutKey: checkoutKey.current }),
+                  keepalive: true,
+                });
+              } catch {
+                // Admin analytics also treats old unpaid attempts as abandoned.
+              }
+            })();
           },
         },
         handler: async (response: {

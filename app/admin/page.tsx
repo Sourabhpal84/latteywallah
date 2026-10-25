@@ -333,6 +333,7 @@ export default function AdminPage() {
           <a href="#categories">Categories</a>
           <Link href="/admin/categories">Category Manager</Link>
           <Link href="/admin/orders">Orders</Link>
+          <Link href="/admin/analytics">Visitors & checkouts</Link>
           <Link href="/admin/complaints">Complaints & Refunds</Link>
           <Link href="/admin/coupons">Coupons</Link>
           <Link href="/admin/delivery-areas">Delivery Areas</Link>

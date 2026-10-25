@@ -6,6 +6,8 @@ type Checkout = {
   status?: string;
   customerId?: string;
   displayOrderId?: string;
+  attemptId?: string;
+  orderDraft?: Record<string, unknown>;
 };
 
 export async function getRazorpayPayment(paymentId: string) {
@@ -63,7 +65,7 @@ export async function getPaidPaymentForRazorpayOrder(
     (payment) =>
       payment.id &&
       payment.order_id === razorpayOrderId &&
-      ["authorized", "captured"].includes(payment.status || "") &&
+      payment.status === "captured" &&
       (expectedAmount === undefined || payment.amount === expectedAmount),
   );
 }
@@ -83,14 +85,21 @@ export async function confirmRazorpayPayment(
     if (!checkout.orderId) throw new Error("Payment order is incomplete");
     const orderRef = adminDb.collection("orders").doc(checkout.orderId);
     const orderSnapshot = await transaction.get(orderRef);
-    if (!orderSnapshot.exists) throw new Error("Order record not found");
-    const order = orderSnapshot.data() as {
+    const attemptRef = checkout.attemptId
+      ? adminDb.collection("checkoutAttempts").doc(checkout.attemptId)
+      : undefined;
+    const attemptSnapshot = attemptRef ? await transaction.get(attemptRef) : undefined;
+    const counterRef = adminDb.collection("counters").doc("orders");
+    const counterSnapshot = orderSnapshot.exists
+      ? undefined
+      : await transaction.get(counterRef);
+    const order = (orderSnapshot.data() || {}) as {
       paymentStatus?: string;
       statusHistory?: unknown[];
       displayOrderId?: string;
       razorpayPaymentId?: string;
     };
-    if (checkout.status === "PAID" && order.paymentStatus === "PAID")
+    if (checkout.status === "PAID" && orderSnapshot.exists && order.paymentStatus === "PAID")
       return { id: orderRef.id, displayOrderId: order.displayOrderId };
     if (
       order.razorpayPaymentId &&
@@ -98,21 +107,47 @@ export async function confirmRazorpayPayment(
     )
       throw new Error("A different payment is already attached to this order");
     const now = new Date().toISOString();
-    const history = Array.isArray(order.statusHistory)
-      ? order.statusHistory
-      : [];
-    const paymentHistory = history.some(
-      (entry: unknown) =>
-        (entry as { status?: string })?.status === "PAYMENT CONFIRMED",
-    )
-      ? history
-      : [...history, { status: "PAYMENT CONFIRMED", timestamp: now }];
-    const confirmedHistory = paymentHistory.some(
-      (entry: unknown) =>
-        (entry as { status?: string })?.status === "CONFIRMED",
-    )
-      ? paymentHistory
-      : [...paymentHistory, { status: "CONFIRMED", timestamp: now }];
+    const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+    const confirmedHistory = [
+      ...history.filter((entry: unknown) =>
+        !["PAYMENT CONFIRMED", "CONFIRMED"].includes(
+          String((entry as { status?: string })?.status || ""),
+        ),
+      ),
+      { status: "PAYMENT CONFIRMED", timestamp: now },
+      { status: "CONFIRMED", timestamp: now },
+    ];
+    if (!orderSnapshot.exists) {
+      if (!checkout.orderDraft) throw new Error("Order details are unavailable");
+      const nextNumber = Number(counterSnapshot?.data()?.nextNumber || 10000) + 1;
+      const displayOrderId = `LW-${nextNumber}`;
+      transaction.set(counterRef, { nextNumber, updatedAt: now }, { merge: true });
+      transaction.create(orderRef, {
+        ...checkout.orderDraft,
+        displayOrderId,
+        paymentStatus: "PAID",
+        orderStatus: "CONFIRMED",
+        razorpayPaymentId,
+        paymentVerifiedAt: now,
+        createdAt: now,
+        updatedAt: now,
+        statusHistory: confirmedHistory,
+      });
+      transaction.update(checkoutRef, {
+        status: "PAID",
+        displayOrderId,
+        razorpayPaymentId,
+        paymentVerifiedAt: now,
+        updatedAt: now,
+      });
+      if (
+        attemptRef &&
+        attemptSnapshot?.exists &&
+        attemptSnapshot.data()?.razorpayOrderId === razorpayOrderId
+      )
+        transaction.update(attemptRef, { status: "PAID", updatedAt: now });
+      return { id: orderRef.id, displayOrderId };
+    }
     transaction.update(orderRef, {
       paymentStatus: "PAID",
       orderStatus: "CONFIRMED",
@@ -127,6 +162,12 @@ export async function confirmRazorpayPayment(
       paymentVerifiedAt: now,
       updatedAt: now,
     });
+    if (
+      attemptRef &&
+      attemptSnapshot?.exists &&
+      attemptSnapshot.data()?.razorpayOrderId === razorpayOrderId
+    )
+      transaction.update(attemptRef, { status: "PAID", updatedAt: now });
     return { id: orderRef.id, displayOrderId: order.displayOrderId };
   });
 }
@@ -143,17 +184,29 @@ export async function markRazorpayPaymentFailed(
     const checkoutSnapshot = await transaction.get(checkoutRef);
     if (!checkoutSnapshot.exists) return;
     const checkout = checkoutSnapshot.data() as Checkout;
-    if (!checkout.orderId || checkout.status === "PAID") return;
-    const orderRef = adminDb.collection("orders").doc(checkout.orderId);
-    const orderSnapshot = await transaction.get(orderRef);
-    if (!orderSnapshot.exists || orderSnapshot.data()?.paymentStatus === "PAID")
-      return;
+    if (checkout.status === "PAID") return;
+    const orderRef = checkout.orderId
+      ? adminDb.collection("orders").doc(checkout.orderId)
+      : undefined;
+    const orderSnapshot = orderRef ? await transaction.get(orderRef) : undefined;
+    const attemptRef = checkout.attemptId
+      ? adminDb.collection("checkoutAttempts").doc(checkout.attemptId)
+      : undefined;
+    const attemptSnapshot = attemptRef ? await transaction.get(attemptRef) : undefined;
+    if (orderSnapshot?.data()?.paymentStatus === "PAID") return;
     const now = new Date().toISOString();
-    transaction.update(orderRef, { paymentStatus: "FAILED", updatedAt: now });
+    if (orderRef && orderSnapshot?.exists)
+      transaction.update(orderRef, { paymentStatus: "FAILED", updatedAt: now });
     transaction.update(checkoutRef, {
       status: "FAILED",
       razorpayPaymentId: razorpayPaymentId || null,
       updatedAt: now,
     });
+    if (
+      attemptRef &&
+      attemptSnapshot?.exists &&
+      attemptSnapshot.data()?.razorpayOrderId === razorpayOrderId
+    )
+      transaction.update(attemptRef, { status: "FAILED", updatedAt: now });
   });
 }

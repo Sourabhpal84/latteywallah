@@ -209,23 +209,29 @@ export async function POST(request: Request) {
       const previous = snapshot.data() as
         | {
             status?: string;
+            alreadyPaid?: boolean;
             razorpayOrderId?: string;
             amount?: number;
             currency?: string;
-            internalOrderId?: string;
+            orderId?: string;
             pincode?: string;
             deliveryCharge?: number;
             taxRate?: number;
             taxAmount?: number;
             couponCode?: string;
             discount?: number;
+            fingerprint?: string;
+            createdAt?: string;
             updatedAt?: string;
           }
         | undefined;
+      if (previous?.status === "PAID" && previous.orderId)
+        return { ...previous, alreadyPaid: true };
       if (
         previous?.status === "READY" &&
         previous.razorpayOrderId &&
-        previous.internalOrderId &&
+        previous.orderId &&
+        previous.fingerprint === JSON.stringify({ address, verifiedItems, totalAmount, couponCode, discount }) &&
         previous.pincode === pincode &&
         previous.deliveryCharge === deliveryCharge &&
         previous.taxRate === taxRate &&
@@ -252,8 +258,24 @@ export async function POST(request: Request) {
           taxAmount,
           couponCode,
           discount,
+          subtotal,
+          totalAmount,
+          customer: {
+            name: address.name,
+            phone: address.phone,
+            email: user.email || "",
+          },
+          deliveryAddress: {
+            name: address.name,
+            phone: address.phone,
+            address: address.address,
+            pincode,
+            instructions: address.instructions || "",
+          },
+          items: verifiedItems,
+          fingerprint: JSON.stringify({ address, verifiedItems, totalAmount, couponCode, discount }),
           updatedAt: now,
-          createdAt: previous?.updatedAt || now,
+          createdAt: previous?.createdAt || now,
         },
         { merge: true },
       );
@@ -261,11 +283,12 @@ export async function POST(request: Request) {
     });
     if (attempt)
       return NextResponse.json({
+        alreadyPaid: attempt.alreadyPaid === true,
         keyId: process.env.RAZORPAY_KEY_ID,
         orderId: attempt.razorpayOrderId,
         amount: attempt.amount,
         currency: attempt.currency,
-        internalOrderId: attempt.internalOrderId,
+        internalOrderId: attempt.orderId,
       });
 
     const razorpayResponse = await fetch("https://api.razorpay.com/v1/orders", {
@@ -293,21 +316,9 @@ export async function POST(request: Request) {
       amount: number;
       currency: string;
     };
-    const created = await adminDb.runTransaction(async (transaction) => {
-      const counterRef = adminDb.collection("counters").doc("orders");
-      const counterSnapshot = await transaction.get(counterRef);
-      const nextNumber =
-        Number(counterSnapshot.data()?.nextNumber || 10000) + 1;
-      const orderRef = adminDb.collection("orders").doc();
-      const createdAt = new Date().toISOString();
-      const displayOrderId = `LW-${nextNumber}`;
-      transaction.set(
-        counterRef,
-        { nextNumber, updatedAt: createdAt },
-        { merge: true },
-      );
-      transaction.create(orderRef, {
-        displayOrderId,
+    const orderRef = adminDb.collection("orders").doc();
+    const createdAt = new Date().toISOString();
+    const orderDraft = {
         userId: user.uid,
         customerId: user.uid,
         customer: {
@@ -331,32 +342,27 @@ export async function POST(request: Request) {
         taxAmount,
         totalAmount,
         paymentMethod: "RAZORPAY",
-        paymentStatus: "PENDING",
-        orderStatus: "NEW",
-        statusHistory: [{ status: "NEW", timestamp: createdAt }],
+        paymentStatus: "PAID",
+        orderStatus: "CONFIRMED",
+        statusHistory: [
+          { status: "PAYMENT CONFIRMED", timestamp: createdAt },
+          { status: "CONFIRMED", timestamp: createdAt },
+        ],
         razorpayOrderId: razorpayOrder.id,
-        razorpayPaymentId: null,
+        razorpayPaymentId: null as string | null,
         createdAt,
         updatedAt: createdAt,
-      });
+    };
+    const created = await adminDb.runTransaction(async (transaction) => {
+      const attemptSnapshot = await transaction.get(attemptRef);
+      const attemptCreatedAt = String(attemptSnapshot.data()?.createdAt || createdAt);
       transaction.create(
         adminDb.collection("checkoutRequests").doc(razorpayOrder.id),
         {
           orderId: orderRef.id,
-          displayOrderId,
           customerId: user.uid,
-          customer: {
-            name: address.name,
-            phone: address.phone,
-            email: user.email || "",
-          },
-          deliveryAddress: {
-            name: address.name,
-            phone: address.phone,
-            address: address.address,
-            pincode,
-            instructions: address.instructions || "",
-          },
+          customer: orderDraft.customer,
+          deliveryAddress: orderDraft.deliveryAddress,
           items: verifiedItems,
           subtotal,
           discount,
@@ -367,6 +373,8 @@ export async function POST(request: Request) {
           totalAmount,
           amountPaise: razorpayOrder.amount,
           status: "PENDING",
+          attemptId: attemptRef.id,
+          orderDraft,
           createdAt,
           updatedAt: createdAt,
         },
@@ -374,15 +382,25 @@ export async function POST(request: Request) {
       transaction.set(
         attemptRef,
         {
+          customerId: user.uid,
           status: "READY",
           razorpayOrderId: razorpayOrder.id,
-          internalOrderId: orderRef.id,
+          orderId: orderRef.id,
           amount: razorpayOrder.amount,
           currency: razorpayOrder.currency,
           pincode,
           deliveryCharge,
           taxRate,
           taxAmount,
+          subtotal,
+          discount,
+          couponCode: couponCode || null,
+          totalAmount,
+          customer: orderDraft.customer,
+          deliveryAddress: orderDraft.deliveryAddress,
+          items: verifiedItems,
+          fingerprint: JSON.stringify({ address, verifiedItems, totalAmount, couponCode, discount }),
+          createdAt: attemptCreatedAt,
           updatedAt: createdAt,
         },
         { merge: true },

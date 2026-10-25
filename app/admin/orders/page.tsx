@@ -68,7 +68,7 @@ export default function AdminOrdersPage() {
   );
   const visible = useMemo(
     () =>
-      orders.filter((order) => {
+      paidOrders.filter((order) => {
         const term = search.trim().toLowerCase();
         const searchable = [
           order.displayOrderId,
@@ -125,6 +125,9 @@ export default function AdminOrdersPage() {
           </Link>
           <Link href="/admin/categories" className="button button-outline">
             CATEGORIES
+          </Link>
+          <Link href="/admin/analytics" className="button button-outline">
+            VISITORS
           </Link>
         </div>
       </header>

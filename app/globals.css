@@ -3139,6 +3139,85 @@ details p {
   gap: 10px;
   margin-bottom: 34px;
 }
+.analytics-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.analytics-section {
+  margin-top: 42px;
+}
+.analytics-note {
+  color: #777;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: -8px 0 18px;
+}
+.analytics-attempts,
+.analytics-visitors {
+  border-top: 1px solid var(--line);
+}
+.analytics-attempt {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.1fr) minmax(220px, 1.4fr) 100px 110px;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 8px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.5);
+}
+.analytics-customer,
+.analytics-items {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.analytics-customer b,
+.analytics-items b {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.analytics-customer a,
+.analytics-customer small,
+.analytics-items small {
+  color: #777;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.analytics-attempt strong {
+  font-size: 13px;
+}
+.analytics-status {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #ebeae6;
+  color: #65483e;
+  font: 9px "DM Mono";
+  letter-spacing: 0.06em;
+}
+.analytics-status-failed {
+  background: #f4dddd;
+  color: #8b3030;
+}
+.analytics-status-abandoned {
+  background: #f4e8d8;
+  color: #805a2f;
+}
+.analytics-status-paid {
+  background: #dcefe3;
+  color: #267044;
+}
+.analytics-visitors article {
+  display: grid;
+  grid-template-columns: 1fr 1fr 140px;
+  gap: 15px;
+  padding: 13px 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.analytics-visitors small,
+.analytics-visitors span {
+  color: #777;
+}
 .order-stats article {
   background: #fff;
   border: 1px solid var(--line);
@@ -3511,6 +3590,9 @@ details p {
   .delivery-card {
     grid-column: auto;
   }
+  .analytics-attempt {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
 }
 @media (max-width: 650px) {
   .order-stats {
@@ -3543,6 +3625,23 @@ details p {
   }
   .customer-order {
     padding: 35px 5vw 80px;
+  }
+  .analytics-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .analytics-attempt {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+  .analytics-items {
+    grid-column: 1 / -1;
+  }
+  .analytics-visitors article {
+    grid-template-columns: 1fr auto;
+    gap: 7px;
+  }
+  .analytics-visitors article span {
+    grid-column: 1 / -1;
   }
 }
 .orders-page-content {
