@@ -1047,6 +1047,18 @@ footer {
   margin: 36px 0 10px;
   font-size: 21px;
 }
+.about-content h1 + h2 {
+  margin-top: -10px;
+  font-size: clamp(20px, 3vw, 27px);
+}
+.about-content ul {
+  display: grid;
+  gap: 12px;
+  padding-left: 22px;
+  color: #555;
+  font-size: 15px;
+  line-height: 1.7;
+}
 .policy-content p {
   color: #555;
   font-size: 15px;

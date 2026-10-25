@@ -222,7 +222,7 @@ export default function Home() {
         <nav className={`nav ${menuOpen ? "nav-open" : ""}`}>
           <a href="#shop">SHOP</a>
           <a href="#collections">COLLECTIONS</a>
-          <a href="#about">ABOUT</a>
+          <a href="/about">ABOUT</a>
         </nav>
         <a className="logo" href="#top">
           
@@ -459,7 +459,7 @@ export default function Home() {
           </div>
         )}
       </section>
-      <footer className="footer" id="about">
+      <footer className="footer" id="footer">
         <div className="footer-brand">
           <a className="logo" href="#top">
             
@@ -474,7 +474,7 @@ export default function Home() {
             <a href="#top">Home</a>
             <a href="#shop">Shop</a>
             <a href="#collections">Collections</a>
-            <a href="#about">About us</a>
+            <a href="/about">About us</a>
           </div>
           <div>
             <p className="eyebrow">HELP & SUPPORT</p>
