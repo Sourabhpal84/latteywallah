@@ -22,7 +22,8 @@ export function FloatingCart() {
     };
   }, []);
 
-  if (!count || pathname === "/checkout") return null;
+  if (!count || pathname === "/checkout" || pathname.startsWith("/admin"))
+    return null;
 
   return (
     <Link
