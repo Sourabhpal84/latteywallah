@@ -1582,6 +1582,10 @@ details p {
   max-width: 430px;
 }
 .admin-header {
+  height: auto;
+  min-height: 76px;
+  padding-top: 10px;
+  padding-bottom: 10px;
   background: #111;
   color: #fff;
 }
