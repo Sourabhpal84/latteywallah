@@ -43,6 +43,9 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [form, setForm] = useState(blank);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [stockProductId, setStockProductId] = useState<string | null>(null);
+  const [stockAmounts, setStockAmounts] = useState<Record<string, string>>({});
+  const [stockSavingKey, setStockSavingKey] = useState("");
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -275,6 +278,72 @@ export default function AdminPage() {
       setNotice(catalogError(error));
     }
   };
+  const manageStock = async (product: Product) => {
+    if (stockProductId === product.id) {
+      setStockProductId(null);
+      return;
+    }
+    let variants = product.variants || [];
+    if (!variants.length) {
+      const colors = (product.colors?.length ? product.colors : [product.color]).filter(Boolean);
+      const sizes = product.sizes?.length ? product.sizes : ["One Size"];
+      variants = colors.flatMap((color) =>
+        sizes.map((size) => ({
+          id: `${slugify(product.name)}-${slugify(color)}-${slugify(size)}`,
+          color,
+          size,
+          price: product.price,
+          stock: 0,
+          sku: `${slugify(product.name).slice(0, 8)}-${color.slice(0, 2)}-${size}`,
+        })),
+      );
+      try {
+        await updateProduct(product.id, { variants });
+        setItems((current) => current.map((item) => item.id === product.id ? { ...item, variants } : item));
+        setNotice(`${product.name}: variants initialized at 0 stock. Add stock to make them available.`);
+      } catch (error) {
+        setNotice(catalogError(error));
+        return;
+      }
+    }
+    setStockProductId(product.id);
+  };
+  const adjustStock = async (
+    product: Product,
+    variantId: string,
+    direction: "in" | "out",
+  ) => {
+    const key = `${product.id}:${variantId}`;
+    if (stockSavingKey) return;
+    const amount = Number(stockAmounts[key] || "1");
+    if (!Number.isInteger(amount) || amount < 1 || amount > 10000) {
+      setNotice("Enter a whole stock quantity from 1 to 10,000.");
+      return;
+    }
+    const variants = product.variants || [];
+    const currentVariant = variants.find((variant) => variant.id === variantId);
+    if (!currentVariant) return;
+    const currentStock = Math.max(0, Number(currentVariant.stock) || 0);
+    if (direction === "out" && amount > currentStock) {
+      setNotice(`Only ${currentStock} unit${currentStock === 1 ? "" : "s"} available for ${currentVariant.color} / ${currentVariant.size}.`);
+      return;
+    }
+    const stock = direction === "in" ? currentStock + amount : currentStock - amount;
+    const updatedVariants = variants.map((variant) =>
+      variant.id === variantId ? { ...variant, stock } : variant,
+    );
+    setStockSavingKey(key);
+    try {
+      await updateProduct(product.id, { variants: updatedVariants });
+      setItems((current) => current.map((item) => item.id === product.id ? { ...item, variants: updatedVariants } : item));
+      setStockAmounts((current) => ({ ...current, [key]: "1" }));
+      setNotice(`${product.name} · ${currentVariant.color} / ${currentVariant.size}: stock ${direction === "in" ? "increased" : "reduced"} to ${stock}.`);
+    } catch (error) {
+      setNotice(catalogError(error));
+    } finally {
+      setStockSavingKey("");
+    }
+  };
   const tree = (parentId: string | null, level = 0): React.ReactNode =>
     categoryOptions
       .filter((category) => category.parentId === parentId)
@@ -370,30 +439,58 @@ export default function AdminPage() {
             </div>
             <div className="admin-products">
               {items.slice().sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)).map((product, position, orderedItems) => (
-                <div className="admin-product" key={product.id}>
-                  <img src={product.image} alt="" />
-                  <div>
-                    <b>{product.name}</b>
-                    <span>
-                      {product.category} · {product.color}
-                    </span>
+                <div className="admin-product-entry" key={product.id}>
+                  <div className="admin-product">
+                    <img src={product.image} alt="" />
+                    <div>
+                      <b>{product.name}</b>
+                      <span>{product.category} · {product.color}</span>
+                    </div>
+                    <strong>₹{product.price.toLocaleString("en-IN")}</strong>
+                    <div className="admin-product-actions">
+                      <button
+                        className="admin-stock-toggle"
+                        onClick={() => void manageStock(product)}
+                        aria-expanded={stockProductId === product.id}
+                        title="Manage stock"
+                      >
+                        STOCK
+                      </button>
+                      <button disabled={position === 0} onClick={() => moveProduct(position, -1)} aria-label={`Move ${product.name} up`} title="Move up"><ArrowUp size={15} /></button>
+                      <button disabled={position === orderedItems.length - 1} onClick={() => moveProduct(position, 1)} aria-label={`Move ${product.name} down`} title="Move down"><ArrowDown size={15} /></button>
+                      <button onClick={() => editProduct(product)} aria-label={`Edit ${product.name}`} title="Edit product"><Pencil size={15} /></button>
+                      <button onClick={() => removeProduct(product)} aria-label={`Delete ${product.name}`}><Trash2 size={16} /></button>
+                    </div>
                   </div>
-                  <strong>₹{product.price.toLocaleString("en-IN")}</strong>
-                  <button disabled={position === 0} onClick={() => moveProduct(position, -1)} aria-label={`Move ${product.name} up`} title="Move up"><ArrowUp size={15} /></button>
-                  <button disabled={position === orderedItems.length - 1} onClick={() => moveProduct(position, 1)} aria-label={`Move ${product.name} down`} title="Move down"><ArrowDown size={15} /></button>
-                  <button
-                    onClick={() => editProduct(product)}
-                    aria-label={`Edit ${product.name}`}
-                    title="Edit product"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    onClick={() => removeProduct(product)}
-                    aria-label={`Delete ${product.name}`}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {stockProductId === product.id && (
+                    <div className="admin-stock-panel">
+                      <div className="admin-stock-heading">
+                        <b>Stock by colour and size</b>
+                        <small>Stock out is limited to the available quantity.</small>
+                      </div>
+                      {(product.variants || []).map((variant) => {
+                        const key = `${product.id}:${variant.id}`;
+                        const saving = stockSavingKey === key;
+                        return (
+                          <div className="admin-stock-row" key={variant.id}>
+                            <b>{variant.color} · {variant.size}</b>
+                            <span>{Number(variant.stock || 0)} in stock</span>
+                            <input
+                              aria-label={`Quantity for ${product.name} ${variant.color} ${variant.size}`}
+                              type="number"
+                              min="1"
+                              max="10000"
+                              step="1"
+                              value={stockAmounts[key] ?? "1"}
+                              onChange={(event) => setStockAmounts((current) => ({ ...current, [key]: event.target.value }))}
+                            />
+                            <button className="button button-outline" disabled={saving || Boolean(stockSavingKey)} onClick={() => void adjustStock(product, variant.id, "in")}>STOCK IN</button>
+                            <button className="button button-outline" disabled={saving || Boolean(stockSavingKey) || Number(variant.stock || 0) < 1} onClick={() => void adjustStock(product, variant.id, "out")}>STOCK OUT</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
